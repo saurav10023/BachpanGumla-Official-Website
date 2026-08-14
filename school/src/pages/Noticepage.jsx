@@ -22,8 +22,6 @@ const API_BASE = import.meta.env?.VITE_API_URL || "";
 const FUCHSIA = "#86198f";
 const FUCHSIA_DARK = "#4a044e";
 const FUCHSIA_MID = "#a21caf";
-const FUCHSIA_LIGHT = "#fdf4ff";
-const FUCHSIA_BORDER = "#e879f9";
 const AMBER = "#f59e0b";
 const AMBER_DARK = "#b45309";
 
@@ -31,16 +29,16 @@ const AMBER_DARK = "#b45309";
 // deliberate break from the brand palette — red is the one color that
 // reads as "pay attention" without a caption.
 const CATEGORY_META = {
-  general: { label: "General", icon: Megaphone, text: FUCHSIA_DARK, bg: FUCHSIA_LIGHT, border: FUCHSIA_BORDER },
-  exam: { label: "Exam", icon: ClipboardList, text: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
-  holiday: { label: "Holiday", icon: CalendarDays, text: AMBER_DARK, bg: "#fffbeb", border: "#fde68a" },
-  event: { label: "Event", icon: PartyPopper, text: "#be185d", bg: "#fdf2f8", border: "#fbcfe8" },
-  urgent: { label: "Urgent", icon: AlertTriangle, text: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-  admission: { label: "Admission", icon: GraduationCap, text: "#0f766e", bg: "#f0fdfa", border: "#99f6e4" },
+  general: { label: "General", icon: Megaphone, text: FUCHSIA_DARK, bg: "rgba(253,244,255,0.7)", border: "rgba(232,121,249,0.5)" },
+  exam: { label: "Exam", icon: ClipboardList, text: "#6d28d9", bg: "rgba(245,243,255,0.7)", border: "rgba(221,214,254,0.6)" },
+  holiday: { label: "Holiday", icon: CalendarDays, text: AMBER_DARK, bg: "rgba(255,251,235,0.7)", border: "rgba(253,230,138,0.6)" },
+  event: { label: "Event", icon: PartyPopper, text: "#be185d", bg: "rgba(253,242,248,0.7)", border: "rgba(251,207,232,0.6)" },
+  urgent: { label: "Urgent", icon: AlertTriangle, text: "#dc2626", bg: "rgba(254,242,242,0.7)", border: "rgba(254,202,202,0.6)" },
+  admission: { label: "Admission", icon: GraduationCap, text: "#0f766e", bg: "rgba(240,253,250,0.7)", border: "rgba(153,246,228,0.6)" },
 };
 
 const FILTERS = [
-  { key: "all", label: "All Notices" },
+  { key: "all", label: "All notices" },
   ...Object.entries(CATEGORY_META).map(([key, v]) => ({ key, label: v.label })),
 ];
 
@@ -135,124 +133,128 @@ export default function NoticesPage() {
   }, [lightbox, closeLightbox]);
 
   return (
-    <div style={{ background: "#ffffff", minHeight: "100vh" }}>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-fuchsia-50 via-white to-amber-50">
+      {/* Drifting gradient blobs */}
+      <div
+        className="pointer-events-none fixed -top-40 -left-32 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30 motion-safe:animate-[np-blob1_16s_ease-in-out_infinite]"
+        style={{ background: `radial-gradient(circle, ${FUCHSIA_MID}, transparent 70%)` }}
+      />
+      <div
+        className="pointer-events-none fixed -bottom-48 -right-24 w-[32rem] h-[32rem] rounded-full blur-3xl opacity-30 motion-safe:animate-[np-blob2_18s_ease-in-out_infinite]"
+        style={{ background: `radial-gradient(circle, ${AMBER}, transparent 70%)` }}
+      />
+      <div
+        className="pointer-events-none fixed top-1/2 left-1/2 w-72 h-72 rounded-full blur-3xl opacity-20 motion-safe:animate-[np-blob3_14s_ease-in-out_infinite]"
+        style={{ background: `radial-gradient(circle, ${FUCHSIA}, transparent 70%)` }}
+      />
+
       <style>{`
-        @keyframes np-fade-up {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes np-fade-in {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        @keyframes np-scale-in {
-          from { opacity: 0; transform: scale(0.96); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-        .np-item { animation: np-fade-up 0.4s ease both; }
+        @keyframes np-blob1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,30px) scale(1.08); } }
+        @keyframes np-blob2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,-40px) scale(1.1); } }
+        @keyframes np-blob3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-25px,25px) scale(0.95); } }
+        @keyframes np-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes np-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes np-scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        @keyframes np-shimmer { 0%,100% { opacity: 0.5; } 50% { opacity: 0.9; } }
+        .np-hero-el { animation: np-fade-up 0.5s ease both; }
+        .np-item { animation: np-fade-up 0.45s ease both; }
+        .np-skel { animation: np-shimmer 1.4s ease-in-out infinite; }
         .np-filter-scroll::-webkit-scrollbar { display: none; }
         .np-filter-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .np-attachment-img { transition: transform 0.35s ease; }
         .np-attachment-wrap:hover .np-attachment-img { transform: scale(1.03); }
         .np-attachment-wrap:hover .np-zoom-hint { opacity: 1; }
-        .np-pdf-card:hover { border-color: ${FUCHSIA_MID}; box-shadow: 0 4px 16px rgba(134,25,143,0.10); }
+        .np-glass-shine { position: relative; overflow: hidden; isolation: isolate; }
+        .np-glass-shine::after {
+          content: "";
+          position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+          background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent);
+          transform: skewX(-18deg);
+          transition: left 0.75s ease;
+        }
+        .np-glass-shine:hover::after { left: 130%; }
         .np-retry-btn:hover { filter: brightness(1.08); }
         @media (prefers-reduced-motion: reduce) {
-          .np-item, .np-attachment-img { animation: none !important; transition: none !important; }
+          .np-item, .np-attachment-img, .np-hero-el, .np-skel, .np-glass-shine::after,
+          [class*="motion-safe:animate-"] { animation: none !important; transition: none !important; }
         }
       `}</style>
 
       {/* Hero */}
-      <div
-        style={{
-          background: `linear-gradient(135deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA_MID} 60%, ${FUCHSIA} 100%)`,
-          padding: "56px 24px 40px",
-        }}
-      >
-        <div style={{ maxWidth: "840px", margin: "0 auto", textAlign: "center" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "56px",
-              height: "56px",
-              borderRadius: "16px",
-              background: "rgba(255,255,255,0.12)",
-              border: "1.5px solid rgba(255,255,255,0.3)",
-              marginBottom: "18px",
-            }}
-          >
-            <Megaphone size={26} color="#ffffff" />
+      <div className="relative px-4 sm:px-6 pt-14 pb-8 sm:pt-16 sm:pb-10">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="np-hero-el flex justify-center mb-5">
+            <span
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-fuchsia-900"
+              style={{
+                background: "rgba(255,255,255,0.55)",
+                border: "1px solid rgba(255,255,255,0.8)",
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 8px 20px -10px rgba(162,28,175,0.35), inset 0 1px 0 rgba(255,255,255,0.9)",
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: FUCHSIA_MID }} />
+              Bachpan updates
+            </span>
           </div>
+
+          <div
+            className="np-hero-el mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
+            style={{
+              animationDelay: "0.05s",
+              background: `linear-gradient(150deg, ${FUCHSIA_MID}33, ${AMBER}24)`,
+              border: "1px solid rgba(255,255,255,0.75)",
+              backdropFilter: "blur(10px)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 14px -8px rgba(162,28,175,0.35)",
+            }}
+          >
+            <Megaphone size={26} color={FUCHSIA_DARK} />
+          </div>
+
           <h1
-            style={{
-              fontFamily: "Georgia, serif",
-              fontSize: "clamp(28px, 4vw, 40px)",
-              color: "#ffffff",
-              margin: "0 0 10px",
-            }}
+            className="np-hero-el text-3xl sm:text-4xl font-semibold text-gray-900 mb-3"
+            style={{ animationDelay: "0.1s", fontFamily: "Fredoka, sans-serif" }}
           >
-            Notices &amp; Announcements
+            Notices &amp; announcements
           </h1>
-          <p
-            style={{
-              fontFamily: "sans-serif",
-              fontSize: "14.5px",
-              color: "rgba(255,255,255,0.8)",
-              margin: 0,
-              lineHeight: 1.6,
-            }}
-          >
-            Everything you need to know from Bachpan &ndash; The Little Kingdom, in one place.
+          <p className="np-hero-el text-sm sm:text-base text-gray-600" style={{ animationDelay: "0.15s" }}>
+            Everything from Bachpan – The Little Kingdom, in one place.
           </p>
         </div>
       </div>
 
       {/* Filters */}
       <div
+        className="sticky top-0 z-20 py-3.5 px-4 sm:px-6"
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          borderBottom: `1px solid ${FUCHSIA_BORDER}`,
-          padding: "14px 16px",
+          background: "rgba(255,255,255,0.6)",
+          borderBottom: "1px solid rgba(255,255,255,0.75)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
         }}
       >
-        <div
-          className="np-filter-scroll"
-          style={{
-            maxWidth: "840px",
-            margin: "0 auto",
-            display: "flex",
-            gap: "8px",
-            overflowX: "auto",
-            paddingBottom: "2px",
-          }}
-        >
+        <div className="np-filter-scroll max-w-2xl mx-auto flex gap-2 overflow-x-auto pb-0.5">
           {FILTERS.map((f) => {
             const active = activeCategory === f.key;
             return (
               <button
                 key={f.key}
                 onClick={() => setActiveCategory(f.key)}
-                style={{
-                  flexShrink: 0,
-                  fontFamily: "sans-serif",
-                  fontSize: "12.5px",
-                  fontWeight: 600,
-                  padding: "8px 16px",
-                  borderRadius: "999px",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "all 0.15s ease",
-                  border: active ? "1.5px solid transparent" : `1.5px solid ${FUCHSIA_BORDER}`,
-                  background: active ? `linear-gradient(135deg, ${AMBER} 0%, ${AMBER_DARK} 100%)` : "#ffffff",
-                  color: active ? "#ffffff" : FUCHSIA_DARK,
-                }}
+                className="np-glass-shine shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[12.5px] font-semibold transition-all"
+                style={
+                  active
+                    ? {
+                        color: "#ffffff",
+                        background: `linear-gradient(135deg, ${AMBER}, ${AMBER_DARK})`,
+                        boxShadow: "0 8px 18px -8px rgba(180,83,9,0.5), inset 0 1px 0 rgba(255,255,255,0.25)",
+                      }
+                    : {
+                        color: FUCHSIA_DARK,
+                        background: "rgba(255,255,255,0.5)",
+                        border: "1px solid rgba(255,255,255,0.8)",
+                        backdropFilter: "blur(10px)",
+                      }
+                }
               >
                 {f.label}
               </button>
@@ -262,29 +264,18 @@ export default function NoticesPage() {
       </div>
 
       {/* Timeline */}
-      <div style={{ maxWidth: "840px", margin: "0 auto", padding: "36px 20px 80px" }}>
+      <div className="relative max-w-2xl mx-auto px-4 sm:px-6 py-9 pb-20">
         {status === "loading" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+          <div className="flex flex-col gap-4">
             {[0, 1, 2].map((i) => (
-              <div key={i} style={{ display: "flex", gap: "16px" }}>
+              <div key={i} className="flex gap-4">
                 <div
-                  style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "12px",
-                    background: FUCHSIA_LIGHT,
-                    flexShrink: 0,
-                    animation: "np-fade-in 1.2s ease-in-out infinite alternate",
-                  }}
+                  className="np-skel shrink-0 rounded-2xl"
+                  style={{ width: "56px", height: "56px", background: "rgba(255,255,255,0.6)" }}
                 />
                 <div
-                  style={{
-                    flex: 1,
-                    height: "96px",
-                    borderRadius: "14px",
-                    background: FUCHSIA_LIGHT,
-                    animation: "np-fade-in 1.2s ease-in-out infinite alternate",
-                  }}
+                  className="np-skel flex-1 rounded-2xl"
+                  style={{ height: "96px", background: "rgba(255,255,255,0.6)" }}
                 />
               </div>
             ))}
@@ -292,26 +283,21 @@ export default function NoticesPage() {
         )}
 
         {status === "error" && (
-          <div style={{ textAlign: "center", padding: "48px 16px" }}>
-            <p style={{ fontFamily: "sans-serif", fontSize: "14px", color: "#dc2626", marginBottom: "16px" }}>
-              {errorMsg}
-            </p>
+          <div
+            className="text-center py-12 px-4 rounded-3xl mx-auto max-w-md"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              border: "1px solid rgba(255,255,255,0.75)",
+              backdropFilter: "blur(16px)",
+            }}
+          >
+            <p className="text-sm text-red-600 mb-4">{errorMsg}</p>
             <button
-              className="np-retry-btn"
+              className="np-retry-btn inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5"
               onClick={() => setRetryToken((n) => n + 1)}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                fontFamily: "sans-serif",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#ffffff",
-                background: FUCHSIA,
-                border: "none",
-                borderRadius: "10px",
-                padding: "9px 18px",
-                cursor: "pointer",
+                background: `linear-gradient(135deg, ${FUCHSIA_MID}, ${FUCHSIA})`,
+                boxShadow: "0 10px 22px -10px rgba(162,28,175,0.55)",
               }}
             >
               <RefreshCw size={14} /> Try again
@@ -320,31 +306,29 @@ export default function NoticesPage() {
         )}
 
         {status === "success" && notices.length === 0 && (
-          <div style={{ textAlign: "center", padding: "64px 16px" }}>
-            <Inbox size={40} color={FUCHSIA_BORDER} style={{ marginBottom: "12px" }} />
-            <p style={{ fontFamily: "sans-serif", fontSize: "14px", color: FUCHSIA, margin: 0 }}>
-              No notices in this category yet.
-            </p>
+          <div
+            className="text-center py-16 px-4 rounded-3xl mx-auto max-w-md"
+            style={{
+              background: "rgba(255,255,255,0.5)",
+              border: "1px solid rgba(255,255,255,0.75)",
+              backdropFilter: "blur(14px)",
+            }}
+          >
+            <Inbox size={36} className="mx-auto mb-3" color={FUCHSIA_MID} />
+            <p className="text-sm text-fuchsia-800">No notices in this category yet.</p>
           </div>
         )}
 
         {status === "success" && notices.length > 0 && (
-          <div style={{ position: "relative" }}>
+          <div className="relative">
             {/* connecting line */}
             <div
               aria-hidden="true"
-              className="hidden sm:block"
-              style={{
-                position: "absolute",
-                left: "27px",
-                top: "8px",
-                bottom: "8px",
-                width: "2px",
-                background: FUCHSIA_BORDER,
-              }}
+              className="hidden sm:block absolute"
+              style={{ left: "27px", top: "8px", bottom: "8px", width: "2px", background: "rgba(232,121,249,0.4)" }}
             />
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div className="flex flex-col gap-5">
               {notices.map((notice, i) => {
                 const meta = CATEGORY_META[notice.category] || CATEGORY_META.general;
                 const Icon = meta.icon;
@@ -355,117 +339,57 @@ export default function NoticesPage() {
                 return (
                   <div
                     key={notice._id}
-                    className="np-item"
-                    style={{
-                      display: "flex",
-                      gap: "16px",
-                      animationDelay: `${Math.min(i, 6) * 0.05}s`,
-                      position: "relative",
-                    }}
+                    className="np-item relative flex gap-4"
+                    style={{ animationDelay: `${Math.min(i, 6) * 0.06}s` }}
                   >
                     {/* date badge */}
                     <div
-                      className="hidden sm:flex"
+                      className="hidden sm:flex shrink-0 flex-col items-center justify-center rounded-2xl"
                       style={{
-                        flexShrink: 0,
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
                         width: "56px",
                         height: "56px",
-                        borderRadius: "12px",
-                        background: FUCHSIA_DARK,
+                        background: `linear-gradient(150deg, ${FUCHSIA_DARK}, ${FUCHSIA_MID})`,
                         color: "#ffffff",
                         zIndex: 1,
+                        boxShadow: "0 8px 18px -10px rgba(74,4,78,0.5)",
                       }}
                     >
-                      <span style={{ fontFamily: "sans-serif", fontSize: "17px", fontWeight: 700, lineHeight: 1 }}>
-                        {date.day}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "sans-serif",
-                          fontSize: "9.5px",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          opacity: 0.75,
-                        }}
-                      >
-                        {date.month}
-                      </span>
+                      <span className="text-[17px] font-bold leading-none">{date.day}</span>
+                      <span className="text-[9.5px] uppercase tracking-wide opacity-80">{date.month}</span>
                     </div>
 
                     {/* card */}
                     <div
+                      className="flex-1 min-w-0 rounded-3xl overflow-hidden"
                       style={{
-                        flex: 1,
-                        minWidth: 0,
-                        background: "#ffffff",
-                        borderRadius: "16px",
-                        border: `1px solid ${isUrgent ? "#fecaca" : "#f5d0fe"}`,
+                        background: "rgba(255,255,255,0.55)",
+                        border: `1px solid ${isUrgent ? "rgba(254,202,202,0.7)" : "rgba(255,255,255,0.75)"}`,
                         borderLeft: `4px solid ${meta.text}`,
+                        backdropFilter: "blur(16px)",
+                        WebkitBackdropFilter: "blur(16px)",
                         boxShadow: isUrgent
-                          ? "0 4px 20px rgba(220,38,38,0.12)"
-                          : "0 2px 12px rgba(134,25,143,0.06)",
-                        overflow: "hidden",
+                          ? "0 10px 26px -16px rgba(220,38,38,0.35), inset 0 1px 0 rgba(255,255,255,0.8)"
+                          : "0 10px 26px -16px rgba(162,28,175,0.25), inset 0 1px 0 rgba(255,255,255,0.8)",
                       }}
                     >
-                      <div style={{ padding: "16px 18px 14px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                            gap: "8px",
-                            marginBottom: "8px",
-                          }}
-                        >
+                      <div className="px-[18px] pt-4 pb-3.5">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "5px",
-                              fontFamily: "sans-serif",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              padding: "3px 10px",
-                              borderRadius: "999px",
-                              color: meta.text,
-                              background: meta.bg,
-                              border: `1px solid ${meta.border}`,
-                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                            style={{ color: meta.text, background: meta.bg, border: `1px solid ${meta.border}` }}
                           >
                             <Icon size={12} />
                             {meta.label}
                           </span>
-                          <span style={{ fontFamily: "sans-serif", fontSize: "11.5px", color: "#9ca3af" }}>
-                            {timeAgo(notice.createdAt)}
-                          </span>
+                          <span className="text-[11.5px] text-gray-500">{timeAgo(notice.createdAt)}</span>
                         </div>
 
-                        <h3
-                          style={{
-                            fontFamily: "sans-serif",
-                            fontSize: "15.5px",
-                            fontWeight: 700,
-                            color: FUCHSIA_DARK,
-                            margin: "0 0 6px",
-                            lineHeight: 1.4,
-                          }}
-                        >
+                        <h3 className="text-[15.5px] font-semibold leading-snug mb-1.5" style={{ color: FUCHSIA_DARK }}>
                           {notice.title}
                         </h3>
 
                         {notice.description && (
-                          <p
-                            style={{
-                              fontFamily: "sans-serif",
-                              fontSize: "13px",
-                              color: "#52525b",
-                              margin: attachmentKind ? "0 0 12px" : 0,
-                              lineHeight: 1.6,
-                            }}
-                          >
+                          <p className={`text-[13px] leading-relaxed text-gray-600 ${attachmentKind ? "mb-3" : "mb-0"}`}>
                             {notice.description}
                           </p>
                         )}
@@ -474,55 +398,20 @@ export default function NoticesPage() {
                       {/* Attachment — shown inline by default, not behind a link click */}
                       {attachmentKind === "image" && (
                         <button
-                          className="np-attachment-wrap"
-                          onClick={() =>
-                            setLightbox({ url: notice.attachmentUrl, title: notice.title })
-                          }
-                          style={{
-                            display: "block",
-                            width: "100%",
-                            border: "none",
-                            borderTop: "1px solid #f5d0fe",
-                            background: "#fafafa",
-                            padding: 0,
-                            cursor: "zoom-in",
-                            position: "relative",
-                            overflow: "hidden",
-                          }}
+                          className="np-attachment-wrap block w-full relative overflow-hidden cursor-zoom-in"
+                          onClick={() => setLightbox({ url: notice.attachmentUrl, title: notice.title })}
+                          style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.6)", background: "rgba(255,255,255,0.3)", padding: 0 }}
                         >
                           <img
                             src={notice.attachmentUrl}
                             alt={notice.title}
-                            className="np-attachment-img"
-                            style={{
-                              display: "block",
-                              width: "100%",
-                              maxHeight: "420px",
-                              minHeight: "140px",
-                              objectFit: "contain",
-                              margin: "0 auto",
-                            }}
+                            className="np-attachment-img block w-full mx-auto"
+                            style={{ maxHeight: "420px", minHeight: "140px", objectFit: "contain" }}
                             loading="lazy"
                           />
                           <span
-                            className="np-zoom-hint"
-                            style={{
-                              position: "absolute",
-                              top: "10px",
-                              right: "10px",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "5px",
-                              fontFamily: "sans-serif",
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#ffffff",
-                              background: "rgba(74,4,78,0.75)",
-                              borderRadius: "999px",
-                              padding: "5px 10px",
-                              opacity: 0,
-                              transition: "opacity 0.2s ease",
-                            }}
+                            className="np-zoom-hint absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity"
+                            style={{ background: "rgba(74,4,78,0.75)", opacity: 0, backdropFilter: "blur(6px)" }}
                           >
                             <ZoomIn size={12} /> View full size
                           </span>
@@ -534,54 +423,21 @@ export default function NoticesPage() {
                           href={notice.attachmentUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="np-pdf-card"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            margin: "0 18px 16px",
-                            padding: "12px 14px",
-                            borderRadius: "12px",
-                            border: "1px solid #f5d0fe",
-                            background: FUCHSIA_LIGHT,
-                            textDecoration: "none",
-                            transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-                          }}
+                          className="np-glass-shine flex items-center gap-3 mx-[18px] mb-4 rounded-2xl px-3.5 py-3 no-underline"
+                          style={{ border: "1px solid rgba(255,255,255,0.75)", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(10px)" }}
                         >
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: "38px",
-                              height: "38px",
-                              borderRadius: "10px",
-                              background: "#dc2626",
-                              flexShrink: 0,
-                            }}
-                          >
+                          <span className="flex items-center justify-center rounded-xl shrink-0" style={{ width: "38px", height: "38px", background: "#dc2626" }}>
                             <FileText size={18} color="#ffffff" />
                           </span>
-                          <span style={{ flex: 1, minWidth: 0 }}>
-                            <span
-                              style={{
-                                display: "block",
-                                fontFamily: "sans-serif",
-                                fontSize: "13px",
-                                fontWeight: 600,
-                                color: FUCHSIA_DARK,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[13px] font-semibold truncate" style={{ color: FUCHSIA_DARK }}>
                               {attachmentFileName(notice.attachmentUrl)}
                             </span>
-                            <span style={{ fontFamily: "sans-serif", fontSize: "11.5px", color: "#a21caf" }}>
-                              PDF document &middot; tap to open
+                            <span className="text-[11.5px]" style={{ color: FUCHSIA_MID }}>
+                              PDF document · tap to open
                             </span>
                           </span>
-                          <ExternalLink size={15} color={FUCHSIA} style={{ flexShrink: 0 }} />
+                          <ExternalLink size={15} color={FUCHSIA} className="shrink-0" />
                         </a>
                       )}
 
@@ -590,22 +446,8 @@ export default function NoticesPage() {
                           href={notice.attachmentUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="np-pdf-card"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            margin: "0 18px 16px",
-                            padding: "10px 14px",
-                            borderRadius: "12px",
-                            border: "1px solid #f5d0fe",
-                            background: FUCHSIA_LIGHT,
-                            textDecoration: "none",
-                            fontFamily: "sans-serif",
-                            fontSize: "12.5px",
-                            fontWeight: 600,
-                            color: FUCHSIA,
-                          }}
+                          className="flex items-center gap-2.5 mx-[18px] mb-4 rounded-2xl px-3.5 py-2.5 no-underline text-[12.5px] font-semibold"
+                          style={{ border: "1px solid rgba(255,255,255,0.75)", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(10px)", color: FUCHSIA }}
                         >
                           <Paperclip size={14} />
                           {attachmentFileName(notice.attachmentUrl)}
@@ -624,35 +466,22 @@ export default function NoticesPage() {
       {lightbox && (
         <div
           onClick={closeLightbox}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 50,
-            background: "rgba(20,4,22,0.88)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "24px",
-            animation: "np-fade-in 0.2s ease both",
-          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: "rgba(20,4,22,0.85)", animation: "np-fade-in 0.2s ease both" }}
         >
           <button
             onClick={closeLightbox}
             aria-label="Close"
+            className="absolute flex items-center justify-center rounded-full transition-transform hover:-translate-y-0.5"
             style={{
-              position: "absolute",
               top: "18px",
               right: "18px",
               width: "38px",
               height: "38px",
-              borderRadius: "999px",
-              border: "none",
-              background: "rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              backdropFilter: "blur(8px)",
               color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
             }}
           >
             <X size={18} />
@@ -661,16 +490,8 @@ export default function NoticesPage() {
             src={lightbox.url}
             alt={lightbox.title}
             onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "100%",
-              maxHeight: "88vh",
-              width: "auto",
-              height: "auto",
-              objectFit: "contain",
-              borderRadius: "12px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-              animation: "np-scale-in 0.2s ease both",
-            }}
+            className="max-w-full max-h-[88vh] w-auto h-auto object-contain rounded-2xl"
+            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.5)", animation: "np-scale-in 0.2s ease both" }}
           />
         </div>
       )}

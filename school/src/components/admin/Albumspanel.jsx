@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import API from "../../api/axios";
 import {
   Plus,
@@ -13,7 +13,47 @@ import {
   AlertCircle,
   AlertTriangle,
   Loader2,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
+// ─── Shared body-scroll lock ──────────────────────────────────────────────
+// Ref-counted so multiple overlays can stack safely (e.g. a lightbox that
+// opens a confirm dialog) without one closing early and un-locking the page
+// while another overlay is still open. Also compensates for the scrollbar
+// width so the page doesn't visibly shift/jump when the lock engages.
+let lockCount = 0;
+let previousBodyOverflow = "";
+let previousBodyPaddingRight = "";
+
+function useLockBodyScroll(active) {
+  useEffect(() => {
+    if (!active) return;
+
+    if (lockCount === 0) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      previousBodyOverflow = document.body.style.overflow;
+      previousBodyPaddingRight = document.body.style.paddingRight;
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+    }
+    lockCount++;
+
+    return () => {
+      lockCount--;
+      if (lockCount === 0) {
+        document.body.style.overflow = previousBodyOverflow;
+        document.body.style.paddingRight = previousBodyPaddingRight;
+      }
+    };
+    // Intentionally only depends on `active` — this must NOT re-run when
+    // unrelated state (submitting, busy, photos.length, etc.) changes,
+    // or the lock flickers off/on and causes a visible scroll/layout jump.
+  }, [active]);
+}
 
 export default function AlbumsPanel() {
   const [albums, setAlbums] = useState([]);
@@ -25,6 +65,7 @@ export default function AlbumsPanel() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState(null); // { type: "album" | "photo", id, label }
+  const [deleting, setDeleting] = useState(false);
 
   const fetchAlbums = async () => {
     setLoading(true);
@@ -56,28 +97,31 @@ export default function AlbumsPanel() {
   };
 
   const handleDeleteAlbum = async (id) => {
+    setDeleting(true);
     try {
       await API.delete(`/api/gallery/albums/${id}`);
       setAlbums((prev) => prev.filter((a) => a._id !== id));
       if (selectedAlbum?.album?._id === id) setSelectedAlbum(null);
+      setConfirmTarget(null);
     } catch (err) {
       setError("Could not delete album.");
     } finally {
-      setConfirmTarget(null);
+      setDeleting(false);
     }
   };
 
   const handleDeletePhoto = async (photoId) => {
+    setDeleting(true);
     try {
       await API.delete(`/api/gallery/photos/${photoId}`);
-      setSelectedAlbum((prev) => ({
-        ...prev,
-        photos: prev.photos.filter((p) => p._id !== photoId),
-      }));
+      setSelectedAlbum((prev) =>
+        prev ? { ...prev, photos: prev.photos.filter((p) => p._id !== photoId) } : prev
+      );
+      setConfirmTarget(null);
     } catch (err) {
       setError("Could not delete photo.");
     } finally {
-      setConfirmTarget(null);
+      setDeleting(false);
     }
   };
 
@@ -109,9 +153,11 @@ export default function AlbumsPanel() {
           loading={selectedLoading}
           onBack={() => setSelectedAlbum(null)}
           onPhotosAdded={(newPhotos) =>
-            setSelectedAlbum((prev) => ({ ...prev, photos: [...newPhotos, ...prev.photos] }))
+            setSelectedAlbum((prev) =>
+              prev ? { ...prev, photos: [...newPhotos, ...prev.photos] } : prev
+            )
           }
-          onRequestDeletePhoto={(id) => setConfirmTarget({ type: "photo", id, label: "this photo" })}
+          onRequestDeletePhoto={(id, label) => setConfirmTarget({ type: "photo", id, label })}
           onError={setError}
         />
       ) : (
@@ -178,6 +224,7 @@ export default function AlbumsPanel() {
       {confirmTarget && (
         <ConfirmDialog
           message={`Delete ${confirmTarget.label}? This can't be undone.`}
+          busy={deleting}
           onCancel={() => setConfirmTarget(null)}
           onConfirm={handleConfirmDelete}
         />
@@ -287,16 +334,34 @@ function CreateAlbumModal({ onClose, onCreated, onError }) {
   const [localError, setLocalError] = useState("");
   const fileInputRef = useRef(null);
 
+  // Lock the background scroll for as long as this modal is mounted —
+  // NOT tied to `submitting`, so clicking "Create" can't flicker the lock.
+  useLockBodyScroll(true);
+
   useEffect(() => {
     return () => {
       if (coverPreview) URL.revokeObjectURL(coverPreview);
     };
   }, [coverPreview]);
 
+  // Escape closes the modal. Kept as its own effect (separate from the
+  // scroll lock above) so re-running it when `submitting` changes never
+  // touches document.body — that's what was causing the scroll jump.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !submitting) onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose, submitting]);
+
   const handleFile = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
     setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
+    setCoverPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -329,126 +394,157 @@ function CreateAlbumModal({ onClose, onCreated, onError }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-center justify-center overscroll-contain bg-black/40 p-4 backdrop-blur-sm"
+      onClick={() => !submitting && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-album-title"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-900">New Album</h3>
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-6 pb-5">
+          <h3 id="create-album-title" className="text-base font-semibold text-gray-900">
+            New Album
+          </h3>
           <button
             onClick={onClose}
+            disabled={submitting}
             aria-label="Close"
-            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Cover image — drag & drop or click to browse */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragActive(true);
-            }}
-            onDragLeave={() => setDragActive(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragActive(false);
-              handleFile(e.dataTransfer.files?.[0]);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-            className={`relative flex h-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors ${
-              dragActive
-                ? "border-fuchsia-400 bg-fuchsia-50"
-                : "border-gray-200 hover:border-fuchsia-300 hover:bg-gray-50"
-            }`}
-          >
-            {coverPreview ? (
-              <>
-                <img src={coverPreview} alt="" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCoverFile(null);
-                    setCoverPreview(null);
-                  }}
-                  aria-label="Remove cover image"
-                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-600 shadow hover:bg-white"
-                >
-                  <X size={13} />
-                </button>
-              </>
-            ) : (
-              <>
-                <UploadCloud size={22} className="mb-1.5 text-gray-400" />
-                <p className="px-4 text-center text-xs font-medium text-gray-500">
-                  Drop a cover image, or click to browse
-                </p>
-              </>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFile(e.target.files?.[0])}
-              className="hidden"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Annual Day 2026"
-              disabled={submitting}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="Optional"
-              disabled={submitting}
-              className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700">Event Date</label>
-            <div className="relative">
-              <Calendar size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <form
+          onSubmit={handleSubmit}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6"
+        >
+          <div className="space-y-4">
+            {/* Cover image — drag & drop or click to browse */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragActive(false);
+                handleFile(e.dataTransfer.files?.[0]);
+              }}
+              onClick={() => !submitting && fileInputRef.current?.click()}
+              className={`relative flex h-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors ${
+                dragActive
+                  ? "border-fuchsia-400 bg-fuchsia-50"
+                  : "border-gray-200 hover:border-fuchsia-300 hover:bg-gray-50"
+              }`}
+            >
+              {coverPreview ? (
+                <>
+                  <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (coverPreview) URL.revokeObjectURL(coverPreview);
+                      setCoverFile(null);
+                      setCoverPreview(null);
+                    }}
+                    aria-label="Remove cover image"
+                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-600 shadow hover:bg-white"
+                  >
+                    <X size={13} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <UploadCloud size={22} className="mb-1.5 text-gray-400" />
+                  <p className="px-4 text-center text-xs font-medium text-gray-500">
+                    Drop a cover image, or click to browse
+                  </p>
+                </>
+              )}
               <input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                disabled={submitting}
-                className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFile(e.target.files?.[0])}
+                className="hidden"
               />
             </div>
+
+            <div>
+              <label htmlFor="album-title" className="mb-1 block text-xs font-medium text-gray-700">
+                Title
+              </label>
+              <input
+                id="album-title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Annual Day 2026"
+                disabled={submitting}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="album-description" className="mb-1 block text-xs font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                id="album-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                placeholder="Optional"
+                disabled={submitting}
+                className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="album-date" className="mb-1 block text-xs font-medium text-gray-700">
+                Event Date
+              </label>
+              <div className="relative">
+                <Calendar
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  id="album-date"
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  disabled={submitting}
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
+                />
+              </div>
+            </div>
+
+            {localError && (
+              <p className="text-xs text-red-600" role="alert">
+                {localError}
+              </p>
+            )}
           </div>
+        </form>
 
-          {localError && <p className="text-xs text-red-600">{localError}</p>}
-
+        <div className="shrink-0 border-t border-gray-100 p-6 pt-4">
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={submitting}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-fuchsia-800 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-fuchsia-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Loader2 size={15} className="animate-spin" />}
             {submitting ? "Creating…" : "Create Album"}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -459,6 +555,7 @@ function CreateAlbumModal({ onClose, onCreated, onError }) {
 function AlbumDetail({ albumData, loading, onBack, onPhotosAdded, onRequestDeletePhoto, onError }) {
   const { album, photos } = albumData;
   const [uploading, setUploading] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(null); // index into photos, or null
 
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -482,6 +579,27 @@ function AlbumDetail({ albumData, loading, onBack, onPhotosAdded, onRequestDelet
     }
   };
 
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const showPrev = useCallback(
+    () => setLightboxIndex((i) => (photos.length ? (i - 1 + photos.length) % photos.length : null)),
+    [photos.length]
+  );
+  const showNext = useCallback(
+    () => setLightboxIndex((i) => (photos.length ? (i + 1) % photos.length : null)),
+    [photos.length]
+  );
+
+  // If the currently-open photo gets deleted, keep the lightbox pointed at
+  // a valid index (or close it if that was the last photo).
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    if (photos.length === 0) {
+      setLightboxIndex(null);
+    } else if (lightboxIndex >= photos.length) {
+      setLightboxIndex(photos.length - 1);
+    }
+  }, [photos.length, lightboxIndex]);
+
   return (
     <div>
       <button
@@ -493,14 +611,18 @@ function AlbumDetail({ albumData, loading, onBack, onPhotosAdded, onRequestDelet
       </button>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">{album.title}</h2>
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold text-gray-900">{album.title}</h2>
           {album.description && <p className="mt-1 text-sm text-gray-500">{album.description}</p>}
           <p className="mt-1 text-xs text-gray-400">
             {photos.length} photo{photos.length === 1 ? "" : "s"}
           </p>
         </div>
-        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-fuchsia-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-fuchsia-900">
+        <label
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-fuchsia-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-fuchsia-900 ${
+            uploading ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+          }`}
+        >
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
           {uploading ? "Uploading…" : "Add Photos"}
           <input
@@ -524,28 +646,56 @@ function AlbumDetail({ albumData, loading, onBack, onPhotosAdded, onRequestDelet
         />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {photos.map((photo) => (
+          {photos.map((photo, idx) => (
             <div
               key={photo._id}
-              className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200"
+              className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200 transition-shadow hover:shadow-md"
             >
-              <img
-                src={photo.imageUrl}
-                alt=""
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
               <button
-                onClick={() => onRequestDeletePhoto(photo._id)}
-                aria-label="Delete photo"
-                className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100 focus:bg-black/40 focus:opacity-100"
+                onClick={() => setLightboxIndex(idx)}
+                className="block h-full w-full cursor-zoom-in"
+                aria-label={`View photo ${idx + 1} full size`}
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-red-600 shadow-sm hover:bg-white">
-                  <Trash2 size={16} />
+                <img
+                  src={photo.imageUrl}
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                {/* Subtle corner hint instead of a full dark overlay */}
+                <span className="pointer-events-none absolute bottom-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                  <ZoomIn size={13} />
                 </span>
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRequestDeletePhoto(photo._id, "this photo");
+                }}
+                aria-label="Delete photo"
+                className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-600 opacity-0 shadow-sm backdrop-blur transition-all hover:bg-white group-hover:opacity-100 focus:opacity-100"
+              >
+                <Trash2 size={13} />
               </button>
             </div>
           ))}
         </div>
+      )}
+
+      {lightboxIndex !== null && photos[lightboxIndex] && (
+        <PhotoLightbox
+          photo={photos[lightboxIndex]}
+          index={lightboxIndex}
+          total={photos.length}
+          onClose={closeLightbox}
+          onPrev={showPrev}
+          onNext={showNext}
+          onDelete={() => {
+            closeLightbox();
+            onRequestDeletePhoto(photos[lightboxIndex]._id, "this photo");
+          }}
+        />
       )}
     </div>
   );
@@ -561,13 +711,116 @@ function PhotoGridSkeleton() {
   );
 }
 
-// ─── Confirm dialog (replaces window.confirm) ────────────────────────────
+// ─── Photo lightbox — full-size view with prev/next + delete ─────────────
 
-function ConfirmDialog({ message, onConfirm, onCancel }) {
+function PhotoLightbox({ photo, index, total, onClose, onPrev, onNext, onDelete }) {
+  // Locked for the lifetime of this component only — independent of
+  // `total`/`index` changes, so paging through photos never flickers it.
+  useLockBodyScroll(true);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") onNext();
+      if (e.key === "ArrowLeft") onPrev();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose, onNext, onPrev]);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-      onClick={onCancel}
+      className="fixed inset-0 z-[100] flex items-center justify-center overscroll-contain bg-black/90 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Photo preview"
+    >
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
+      >
+        <X size={20} />
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label="Delete this photo"
+        className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-medium text-white transition-colors hover:border-red-400 hover:bg-red-500/80"
+      >
+        <Trash2 size={14} />
+        Delete
+      </button>
+
+      {total > 1 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onPrev();
+          }}
+          aria-label="Previous photo"
+          className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 sm:flex"
+        >
+          <ChevronLeft size={22} />
+        </button>
+      )}
+
+      <img
+        src={photo.imageUrl}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+      />
+
+      {total > 1 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onNext();
+          }}
+          aria-label="Next photo"
+          className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 sm:flex"
+        >
+          <ChevronRight size={22} />
+        </button>
+      )}
+
+      {total > 1 && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white">
+          {index + 1} / {total}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Confirm dialog (replaces window.confirm) ────────────────────────────
+
+function ConfirmDialog({ message, busy, onConfirm, onCancel }) {
+  // This previously had NO scroll lock at all, so the page behind it could
+  // still scroll while it was open. It also now sits at a higher z-index
+  // than other overlays so it always renders on top if it's ever triggered
+  // from within another modal (e.g. deleting a photo from the lightbox).
+  useLockBodyScroll(true);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !busy) onCancel();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onCancel, busy]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center overscroll-contain bg-black/40 p-4 backdrop-blur-sm"
+      onClick={() => !busy && onCancel()}
+      role="dialog"
+      aria-modal="true"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -580,15 +833,18 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
         <div className="mt-6 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            disabled={busy}
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            disabled={busy}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            {busy && <Loader2 size={14} className="animate-spin" />}
+            {busy ? "Deleting…" : "Delete"}
           </button>
         </div>
       </div>

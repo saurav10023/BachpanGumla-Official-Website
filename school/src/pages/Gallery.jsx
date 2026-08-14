@@ -14,10 +14,7 @@ const API_BASE = import.meta.env?.VITE_API_URL || "";
 const FUCHSIA = "#86198f";
 const FUCHSIA_DARK = "#4a044e";
 const FUCHSIA_MID = "#a21caf";
-const FUCHSIA_LIGHT = "#fdf4ff";
-const FUCHSIA_BORDER = "#e879f9";
 const AMBER = "#f59e0b";
-const AMBER_DARK = "#b45309";
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -103,89 +100,128 @@ export default function GalleryPage() {
   }, [lightboxIndex, albumDetail, openAlbumId, closeAlbum]);
 
   return (
-    <div style={{ background: "#ffffff", minHeight: "100vh" }}>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-fuchsia-50 via-white to-amber-50">
+      {/* Drifting gradient blobs */}
+      <div
+        className="pointer-events-none fixed -top-40 -left-32 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30 motion-safe:animate-[gp-blob1_16s_ease-in-out_infinite]"
+        style={{ background: `radial-gradient(circle, ${FUCHSIA_MID}, transparent 70%)` }}
+      />
+      <div
+        className="pointer-events-none fixed -bottom-48 -right-24 w-[32rem] h-[32rem] rounded-full blur-3xl opacity-30 motion-safe:animate-[gp-blob2_18s_ease-in-out_infinite]"
+        style={{ background: `radial-gradient(circle, ${AMBER}, transparent 70%)` }}
+      />
+      <div
+        className="pointer-events-none fixed top-1/2 left-1/2 w-72 h-72 rounded-full blur-3xl opacity-20 motion-safe:animate-[gp-blob3_14s_ease-in-out_infinite]"
+        style={{ background: `radial-gradient(circle, ${FUCHSIA}, transparent 70%)` }}
+      />
+
       <style>{`
+        @keyframes gp-blob1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,30px) scale(1.08); } }
+        @keyframes gp-blob2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,-40px) scale(1.1); } }
+        @keyframes gp-blob3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-25px,25px) scale(0.95); } }
         @keyframes gp-pop-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
         @keyframes gp-fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .gp-card { animation: gp-fade-in 0.35s ease both; }
+        @keyframes gp-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .gp-card { animation: gp-fade-up 0.5s ease both; position: relative; overflow: hidden; isolation: isolate; }
         .gp-card img { transition: transform 0.35s ease; }
         .gp-card:hover img { transform: scale(1.06); }
+        .gp-card::after {
+          content: "";
+          position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+          background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent);
+          transform: skewX(-18deg);
+          transition: left 0.75s ease;
+          z-index: 2;
+        }
+        .gp-card:hover::after { left: 130%; }
         .gp-modal { animation: gp-fade-in 0.2s ease both; }
         .gp-modal-panel { animation: gp-pop-in 0.25s ease both; }
+        .gp-eyebrow { animation: gp-fade-up 0.5s ease both; }
         @media (prefers-reduced-motion: reduce) {
-          .gp-card, .gp-card img, .gp-modal, .gp-modal-panel { animation: none; transition: none; }
+          .gp-card, .gp-card img, .gp-card::after, .gp-modal, .gp-modal-panel, .gp-eyebrow,
+          [class*="motion-safe:animate-"] { animation: none !important; transition: none !important; }
         }
       `}</style>
 
       {/* Hero */}
-      <div
-        style={{
-          background: `linear-gradient(135deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA_MID} 60%, ${FUCHSIA} 100%)`,
-          padding: "56px 24px 40px",
-        }}
-      >
-        <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "56px",
-              height: "56px",
-              borderRadius: "16px",
-              background: "rgba(255,255,255,0.12)",
-              border: "1.5px solid rgba(255,255,255,0.3)",
-              marginBottom: "18px",
-            }}
-          >
-            <Images size={26} color="#ffffff" />
+      <div className="relative px-4 sm:px-6 pt-14 pb-10 sm:pt-16 sm:pb-14">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="gp-eyebrow flex justify-center mb-5">
+            <span
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-fuchsia-900"
+              style={{
+                background: "rgba(255,255,255,0.55)",
+                border: "1px solid rgba(255,255,255,0.8)",
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 8px 20px -10px rgba(162,28,175,0.35), inset 0 1px 0 rgba(255,255,255,0.9)",
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: FUCHSIA_MID }} />
+              Photo gallery
+            </span>
           </div>
-          <h1
+
+          <div
+            className="gp-eyebrow mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
             style={{
-              fontFamily: "Georgia, serif",
-              fontSize: "clamp(28px, 4vw, 40px)",
-              color: "#ffffff",
-              margin: "0 0 10px",
+              animationDelay: "0.05s",
+              background: `linear-gradient(150deg, ${FUCHSIA_MID}33, ${AMBER}24)`,
+              border: "1px solid rgba(255,255,255,0.75)",
+              backdropFilter: "blur(10px)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 14px -8px rgba(162,28,175,0.35)",
             }}
           >
-            Photo Gallery
+            <Images size={26} color={FUCHSIA_DARK} />
+          </div>
+
+          <h1
+            className="gp-eyebrow text-3xl sm:text-4xl font-semibold text-gray-900 mb-3"
+            style={{ animationDelay: "0.1s", fontFamily: "Fredoka, sans-serif" }}
+          >
+            Moments worth keeping
           </h1>
-          <p style={{ fontFamily: "sans-serif", fontSize: "14.5px", color: "rgba(255,255,255,0.8)", margin: 0, lineHeight: 1.6 }}>
-            Moments from classrooms, events and everyday little-kingdom life.
+          <p className="gp-eyebrow text-sm sm:text-base text-gray-600" style={{ animationDelay: "0.15s" }}>
+            Photos from classrooms, events and everyday little-kingdom life.
           </p>
         </div>
       </div>
 
       {/* Album grid */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 20px 80px" }}>
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pb-20">
         {status === "loading" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "20px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse" style={{ borderRadius: "16px", overflow: "hidden" }}>
-                <div style={{ aspectRatio: "4 / 3", background: FUCHSIA_LIGHT }} />
+              <div
+                key={i}
+                className="animate-pulse rounded-3xl overflow-hidden"
+                style={{
+                  background: "rgba(255,255,255,0.45)",
+                  border: "1px solid rgba(255,255,255,0.7)",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <div style={{ aspectRatio: "4 / 3" }} />
               </div>
             ))}
           </div>
         )}
 
         {status === "error" && (
-          <div style={{ textAlign: "center", padding: "48px 16px" }}>
-            <p style={{ fontFamily: "sans-serif", fontSize: "14px", color: "#dc2626", marginBottom: "16px" }}>{errorMsg}</p>
+          <div
+            className="text-center py-12 px-4 rounded-3xl mx-auto max-w-md"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              border: "1px solid rgba(255,255,255,0.75)",
+              backdropFilter: "blur(16px)",
+            }}
+          >
+            <p className="text-sm text-red-600 mb-4">{errorMsg}</p>
             <button
               onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                fontFamily: "sans-serif",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#ffffff",
-                background: FUCHSIA,
-                border: "none",
-                borderRadius: "10px",
-                padding: "9px 18px",
-                cursor: "pointer",
+                background: `linear-gradient(135deg, ${FUCHSIA_MID}, ${FUCHSIA})`,
+                boxShadow: "0 10px 22px -10px rgba(162,28,175,0.55)",
               }}
             >
               <RefreshCw size={14} /> Try again
@@ -194,35 +230,37 @@ export default function GalleryPage() {
         )}
 
         {status === "success" && albums.length === 0 && (
-          <div style={{ textAlign: "center", padding: "64px 16px" }}>
-            <ImageOff size={40} color={FUCHSIA_BORDER} style={{ marginBottom: "12px" }} />
-            <p style={{ fontFamily: "sans-serif", fontSize: "14px", color: FUCHSIA, margin: 0 }}>
-              No albums have been published yet — check back soon.
-            </p>
+          <div
+            className="text-center py-16 px-4 rounded-3xl mx-auto max-w-md"
+            style={{
+              background: "rgba(255,255,255,0.5)",
+              border: "1px solid rgba(255,255,255,0.75)",
+              backdropFilter: "blur(14px)",
+            }}
+          >
+            <ImageOff size={36} className="mx-auto mb-3" color={FUCHSIA_MID} />
+            <p className="text-sm text-fuchsia-800">No albums have been published yet — check back soon.</p>
           </div>
         )}
 
         {status === "success" && albums.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "20px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {albums.map((album, i) => (
               <button
                 key={album._id}
                 onClick={() => openAlbum(album._id)}
-                className="gp-card"
+                className="gp-card text-left rounded-3xl"
                 style={{
-                  animationDelay: `${Math.min(i, 8) * 0.04}s`,
-                  position: "relative",
-                  textAlign: "left",
-                  border: "none",
+                  animationDelay: `${Math.min(i, 8) * 0.06}s`,
                   padding: 0,
-                  borderRadius: "16px",
-                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.75)",
+                  background: "rgba(255,255,255,0.5)",
+                  backdropFilter: "blur(14px)",
+                  boxShadow: "0 10px 26px -16px rgba(162,28,175,0.3), inset 0 1px 0 rgba(255,255,255,0.8)",
                   cursor: "pointer",
-                  background: FUCHSIA_LIGHT,
-                  boxShadow: "0 4px 20px rgba(134,25,143,0.1)",
                 }}
               >
-                <div style={{ aspectRatio: "4 / 3", overflow: "hidden", background: FUCHSIA_LIGHT }}>
+                <div style={{ aspectRatio: "4 / 3", overflow: "hidden", background: "rgba(255,255,255,0.4)" }}>
                   {album.coverImageUrl ? (
                     <img
                       src={album.coverImageUrl}
@@ -231,7 +269,7 @@ export default function GalleryPage() {
                     />
                   ) : (
                     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Images size={32} color={FUCHSIA_BORDER} />
+                      <Images size={32} color={FUCHSIA_MID} />
                     </div>
                   )}
                 </div>
@@ -239,15 +277,13 @@ export default function GalleryPage() {
                   style={{
                     position: "absolute",
                     inset: 0,
-                    background: "linear-gradient(to top, rgba(74,4,78,0.85) 0%, rgba(74,4,78,0.05) 55%, transparent 100%)",
+                    background: "linear-gradient(to top, rgba(74,4,78,0.82) 0%, rgba(74,4,78,0.05) 55%, transparent 100%)",
                   }}
                 />
                 <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "16px" }}>
-                  <p style={{ fontFamily: "sans-serif", fontSize: "15px", fontWeight: 700, color: "#ffffff", margin: "0 0 4px", lineHeight: 1.3 }}>
-                    {album.title}
-                  </p>
+                  <p className="text-white font-semibold text-[15px] mb-1 leading-snug">{album.title}</p>
                   {album.eventDate && (
-                    <p style={{ display: "flex", alignItems: "center", gap: "5px", fontFamily: "sans-serif", fontSize: "11.5px", color: "rgba(255,255,255,0.8)", margin: 0 }}>
+                    <p className="flex items-center gap-1.5 text-[11.5px]" style={{ color: "rgba(255,255,255,0.85)" }}>
                       <CalendarDays size={12} />
                       {formatDate(album.eventDate)}
                     </p>
@@ -267,9 +303,11 @@ export default function GalleryPage() {
             position: "fixed",
             inset: 0,
             zIndex: 100,
-            background: "rgba(20,4,22,0.88)",
+            background: "rgba(20,4,22,0.6)",
+            backdropFilter: "blur(4px)",
             display: "flex",
             flexDirection: "column",
+            padding: "16px",
           }}
           onClick={closeAlbum}
         >
@@ -280,49 +318,39 @@ export default function GalleryPage() {
               margin: "auto",
               width: "min(1000px, 94vw)",
               maxHeight: "88vh",
-              background: "#ffffff",
-              borderRadius: "18px",
+              borderRadius: "24px",
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
+              background: "rgba(255,255,255,0.7)",
+              border: "1px solid rgba(255,255,255,0.8)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              boxShadow: "0 20px 50px -20px rgba(74,4,78,0.4)",
             }}
           >
             <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                gap: "12px",
-                padding: "18px 20px",
-                borderBottom: `1px solid ${FUCHSIA_BORDER}`,
-                background: FUCHSIA_LIGHT,
-              }}
+              className="flex items-start justify-between gap-3 px-5 py-4"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.6)", background: "rgba(255,255,255,0.35)" }}
             >
               <div>
-                <h2 style={{ fontFamily: "sans-serif", fontSize: "16px", fontWeight: 700, color: FUCHSIA_DARK, margin: "0 0 4px" }}>
+                <h2 className="text-base font-semibold text-fuchsia-950 mb-1">
                   {albumDetail?.album?.title || "Loading album…"}
                 </h2>
                 {albumDetail?.album?.description && (
-                  <p style={{ fontFamily: "sans-serif", fontSize: "12.5px", color: FUCHSIA, margin: 0, maxWidth: "560px" }}>
-                    {albumDetail.album.description}
-                  </p>
+                  <p className="text-[12.5px] text-fuchsia-800 max-w-[560px]">{albumDetail.album.description}</p>
                 )}
               </div>
               <button
                 onClick={closeAlbum}
                 aria-label="Close album"
+                className="shrink-0 flex items-center justify-center rounded-xl transition-transform hover:-translate-y-0.5"
                 style={{
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   width: "34px",
                   height: "34px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: "#ffffff",
+                  background: "rgba(255,255,255,0.7)",
+                  border: "1px solid rgba(255,255,255,0.85)",
                   color: FUCHSIA_DARK,
-                  cursor: "pointer",
                   boxShadow: "0 2px 8px rgba(134,25,143,0.15)",
                 }}
               >
@@ -330,41 +358,40 @@ export default function GalleryPage() {
               </button>
             </div>
 
-            <div style={{ padding: "18px 20px", overflowY: "auto" }}>
+            <div className="px-5 py-4" style={{ overflowY: "auto" }}>
               {albumStatus === "loading" && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: "10px" }}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-                    <div key={i} className="animate-pulse" style={{ aspectRatio: "1 / 1", borderRadius: "10px", background: FUCHSIA_LIGHT }} />
+                    <div
+                      key={i}
+                      className="animate-pulse rounded-xl"
+                      style={{ aspectRatio: "1 / 1", background: "rgba(255,255,255,0.5)" }}
+                    />
                   ))}
                 </div>
               )}
 
               {albumStatus === "error" && (
-                <p style={{ fontFamily: "sans-serif", fontSize: "13px", color: "#dc2626", textAlign: "center", padding: "24px 0" }}>
-                  Couldn&rsquo;t load photos for this album.
-                </p>
+                <p className="text-[13px] text-red-600 text-center py-6">Couldn&rsquo;t load photos for this album.</p>
               )}
 
               {albumStatus === "success" && albumDetail?.photos?.length === 0 && (
-                <p style={{ fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textAlign: "center", padding: "24px 0" }}>
-                  No photos in this album yet.
-                </p>
+                <p className="text-[13px] text-fuchsia-800 text-center py-6">No photos in this album yet.</p>
               )}
 
               {albumStatus === "success" && albumDetail?.photos?.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: "10px" }}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {albumDetail.photos.map((photo, idx) => (
                     <button
                       key={photo._id}
                       onClick={() => setLightboxIndex(idx)}
+                      className="rounded-xl overflow-hidden"
                       style={{
-                        border: "none",
+                        border: "1px solid rgba(255,255,255,0.7)",
                         padding: 0,
-                        borderRadius: "10px",
-                        overflow: "hidden",
                         cursor: "pointer",
                         aspectRatio: "1 / 1",
-                        background: FUCHSIA_LIGHT,
+                        background: "rgba(255,255,255,0.4)",
                       }}
                     >
                       <img
@@ -389,7 +416,7 @@ export default function GalleryPage() {
             position: "fixed",
             inset: 0,
             zIndex: 200,
-            background: "rgba(10,2,12,0.95)",
+            background: "rgba(10,2,12,0.92)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -402,19 +429,17 @@ export default function GalleryPage() {
               setLightboxIndex(null);
             }}
             aria-label="Close photo"
+            className="flex items-center justify-center rounded-full transition-transform hover:-translate-y-0.5"
             style={{
               position: "absolute",
               top: "18px",
               right: "18px",
               width: "40px",
               height: "40px",
-              borderRadius: "50%",
-              border: "1.5px solid rgba(255,255,255,0.3)",
-              background: "rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              backdropFilter: "blur(8px)",
               color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               cursor: "pointer",
             }}
           >
@@ -427,18 +452,16 @@ export default function GalleryPage() {
               setLightboxIndex((i) => (i - 1 + albumDetail.photos.length) % albumDetail.photos.length);
             }}
             aria-label="Previous photo"
-            className="hidden sm:flex"
+            className="hidden sm:flex items-center justify-center rounded-full transition-transform hover:-translate-y-0.5"
             style={{
               position: "absolute",
               left: "18px",
               width: "44px",
               height: "44px",
-              borderRadius: "50%",
-              border: "1.5px solid rgba(255,255,255,0.3)",
-              background: "rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              backdropFilter: "blur(8px)",
               color: "#ffffff",
-              alignItems: "center",
-              justifyContent: "center",
               cursor: "pointer",
             }}
           >
@@ -449,7 +472,7 @@ export default function GalleryPage() {
             src={albumDetail.photos[lightboxIndex].imageUrl}
             alt=""
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "90vw", maxHeight: "82vh", borderRadius: "10px", boxShadow: "0 12px 60px rgba(0,0,0,0.5)" }}
+            style={{ maxWidth: "90vw", maxHeight: "82vh", borderRadius: "14px", boxShadow: "0 12px 60px rgba(0,0,0,0.5)" }}
           />
 
           <button
@@ -458,18 +481,16 @@ export default function GalleryPage() {
               setLightboxIndex((i) => (i + 1) % albumDetail.photos.length);
             }}
             aria-label="Next photo"
-            className="hidden sm:flex"
+            className="hidden sm:flex items-center justify-center rounded-full transition-transform hover:-translate-y-0.5"
             style={{
               position: "absolute",
               right: "18px",
               width: "44px",
               height: "44px",
-              borderRadius: "50%",
-              border: "1.5px solid rgba(255,255,255,0.3)",
-              background: "rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              backdropFilter: "blur(8px)",
               color: "#ffffff",
-              alignItems: "center",
-              justifyContent: "center",
               cursor: "pointer",
             }}
           >
@@ -477,18 +498,18 @@ export default function GalleryPage() {
           </button>
 
           <div
+            className="text-xs font-semibold"
             style={{
               position: "absolute",
               bottom: "18px",
               left: "50%",
               transform: "translateX(-50%)",
-              fontFamily: "sans-serif",
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "rgba(255,255,255,0.75)",
-              background: "rgba(255,255,255,0.1)",
-              padding: "5px 12px",
+              color: "rgba(255,255,255,0.85)",
+              background: "rgba(255,255,255,0.15)",
+              backdropFilter: "blur(8px)",
+              padding: "6px 14px",
               borderRadius: "999px",
+              border: "1px solid rgba(255,255,255,0.25)",
             }}
           >
             {lightboxIndex + 1} / {albumDetail.photos.length}

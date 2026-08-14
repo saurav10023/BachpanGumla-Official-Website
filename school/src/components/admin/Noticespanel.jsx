@@ -4,6 +4,7 @@ import {
   Plus,
   X,
   Trash2,
+  Pencil,
   Megaphone,
   Paperclip,
   UploadCloud,
@@ -18,10 +19,16 @@ import {
 // NOTE: this assumes a notice controller with routes shaped like:
 //   GET    /api/notices
 //   POST   /api/notices              (multipart if attachment included)
-//   PATCH  /api/notices/:id          (toggle isPublished, etc.)
+//   PATCH  /api/notices/:id          (edit fields / toggle isPublished / replace attachment)
 //   DELETE /api/notices/:id
 // That controller wasn't part of what you shared, so double-check these
 // paths (and the field names) against your actual router/controller.
+//
+// NOTE: the "Remove attachment" option in the edit modal sends
+// removeAttachment: "true" — your updateNotice controller needs to handle
+// that flag (destroy the Cloudinary asset and null out the three
+// attachment fields) for it to actually take effect. If that branch isn't
+// wired up yet, hide/remove the button below or it'll silently no-op.
 
 const CATEGORIES = [
   { value: "general", label: "General", dot: "bg-gray-400", pill: "bg-gray-100 text-gray-600" },
@@ -39,6 +46,7 @@ export default function NoticesPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editTarget, setEditTarget] = useState(null); // full notice object, or null
   const [confirmTarget, setConfirmTarget] = useState(null); // { id, label }
   const [activeFilter, setActiveFilter] = useState("all");
   const [busyId, setBusyId] = useState(null);
@@ -165,6 +173,7 @@ export default function NoticesPanel() {
               notice={notice}
               busy={busyId === notice._id}
               onTogglePublish={() => handleTogglePublish(notice)}
+              onEdit={() => setEditTarget(notice)}
               onRequestDelete={() =>
                 setConfirmTarget({ id: notice._id, label: `"${notice.title}"` })
               }
@@ -174,11 +183,25 @@ export default function NoticesPanel() {
       )}
 
       {showCreate && (
-        <CreateNoticeModal
+        <NoticeFormModal
+          mode="create"
           onClose={() => setShowCreate(false)}
-          onCreated={(notice) => {
+          onSaved={(notice) => {
             setNotices((prev) => [notice, ...prev]);
             setShowCreate(false);
+          }}
+          onError={setError}
+        />
+      )}
+
+      {editTarget && (
+        <NoticeFormModal
+          mode="edit"
+          initialNotice={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={(notice) => {
+            setNotices((prev) => prev.map((n) => (n._id === notice._id ? notice : n)));
+            setEditTarget(null);
           }}
           onError={setError}
         />
@@ -216,7 +239,7 @@ function FilterPill({ active, onClick, label, count, dot }) {
 
 // ─── Notice card ─────────────────────────────────────────────────────────
 
-function NoticeCard({ notice, busy, onTogglePublish, onRequestDelete }) {
+function NoticeCard({ notice, busy, onTogglePublish, onEdit, onRequestDelete }) {
   const meta = categoryMeta(notice.category);
   const isUrgent = notice.category === "urgent";
 
@@ -272,6 +295,13 @@ function NoticeCard({ notice, busy, onTogglePublish, onRequestDelete }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 self-start sm:flex-col sm:items-end sm:gap-2">
+          <button
+            onClick={onEdit}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-fuchsia-800"
+          >
+            <Pencil size={13} />
+            Edit
+          </button>
           <button
             onClick={onTogglePublish}
             disabled={busy}
@@ -342,21 +372,31 @@ function EmptyState({ hasNotices, onAction }) {
   );
 }
 
-// ─── Create notice modal ──────────────────────────────────────────────────
+// ─── Create / edit notice modal ───────────────────────────────────────────
+// One form drives both flows: POST for create, PATCH (multipart when the
+// attachment changes) for edit. `initialNotice` is only passed in edit mode.
 
-function CreateNoticeModal({ onClose, onCreated, onError }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("general");
-  const [attachment, setAttachment] = useState(null);
+function NoticeFormModal({ mode, initialNotice, onClose, onSaved, onError }) {
+  const isEdit = mode === "edit";
+
+  const [title, setTitle] = useState(initialNotice?.title || "");
+  const [description, setDescription] = useState(initialNotice?.description || "");
+  const [category, setCategory] = useState(initialNotice?.category || "general");
+  const [isPublished, setIsPublished] = useState(initialNotice?.isPublished ?? true);
+  const [attachment, setAttachment] = useState(null); // new File, if replacing
+  const [removeAttachment, setRemoveAttachment] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const fileInputRef = useRef(null);
 
+  const existingAttachmentUrl = isEdit ? initialNotice?.attachmentUrl : null;
+  const hasAttachmentToShow = attachment || (existingAttachmentUrl && !removeAttachment);
+
   const handleFile = (file) => {
     if (!file) return;
     setAttachment(file);
+    setRemoveAttachment(false);
   };
 
   const handleSubmit = async (e) => {
@@ -366,22 +406,40 @@ function CreateNoticeModal({ onClose, onCreated, onError }) {
       return;
     }
     setLocalError("");
-
-    const formData = new FormData();
-    formData.append("title", title.trim());
-    formData.append("description", description);
-    formData.append("category", category);
-    if (attachment) formData.append("attachment", attachment);
-
-    setSubmitting(true);
     onError("");
+    setSubmitting(true);
+
     try {
-      const res = await API.post("/api/notices", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      onCreated(res.data.data);
+      let res;
+      if (attachment) {
+        const formData = new FormData();
+        formData.append("title", title.trim());
+        formData.append("description", description);
+        formData.append("category", category);
+        formData.append("isPublished", isPublished);
+        formData.append("attachment", attachment);
+        res = isEdit
+          ? await API.patch(`/api/notices/${initialNotice._id}`, formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            })
+          : await API.post("/api/notices", formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+      } else {
+        const payload = {
+          title: title.trim(),
+          description,
+          category,
+          isPublished,
+          ...(isEdit && removeAttachment ? { removeAttachment: true } : {}),
+        };
+        res = isEdit
+          ? await API.patch(`/api/notices/${initialNotice._id}`, payload)
+          : await API.post("/api/notices", payload);
+      }
+      onSaved(res.data.data);
     } catch (err) {
-      onError("Could not create notice.");
+      onError(isEdit ? "Could not update notice." : "Could not create notice.");
     } finally {
       setSubmitting(false);
     }
@@ -397,7 +455,9 @@ function CreateNoticeModal({ onClose, onCreated, onError }) {
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
       >
         <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-900">New Notice</h3>
+          <h3 className="text-base font-semibold text-gray-900">
+            {isEdit ? "Edit Notice" : "New Notice"}
+          </h3>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -454,58 +514,96 @@ function CreateNoticeModal({ onClose, onCreated, onError }) {
             </div>
           </div>
 
+          {isEdit && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">Status</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPublished(true)}
+                  disabled={submitting}
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    isPublished
+                      ? "border-fuchsia-800 bg-fuchsia-800 text-white"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <Eye size={13} />
+                  Published
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPublished(false)}
+                  disabled={submitting}
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    !isPublished
+                      ? "border-gray-800 bg-gray-800 text-white"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <EyeOff size={13} />
+                  Draft
+                </button>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">Attachment</label>
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragActive(true);
-              }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragActive(false);
-                handleFile(e.dataTransfer.files?.[0]);
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              className={`relative flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${
-                dragActive
-                  ? "border-fuchsia-400 bg-fuchsia-50"
-                  : "border-gray-200 hover:border-fuchsia-300 hover:bg-gray-50"
-              }`}
-            >
-              {attachment ? (
-                <>
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <FileText size={16} className="shrink-0 text-fuchsia-700" />
-                    <span className="max-w-[220px] truncate">{attachment.name}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
+
+            {hasAttachmentToShow ? (
+              <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3">
+                <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-gray-700">
+                  <FileText size={16} className="shrink-0 text-fuchsia-700" />
+                  <span className="truncate">
+                    {attachment ? attachment.name : "Current attachment"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (attachment) {
                       setAttachment(null);
-                    }}
-                    className="mt-1 text-xs font-medium text-red-600 hover:underline"
-                  >
-                    Remove
-                  </button>
-                </>
-              ) : (
-                <>
-                  <UploadCloud size={20} className="text-gray-400" />
-                  <p className="text-xs font-medium text-gray-500">
-                    Drop a file, or click to browse
-                  </p>
-                </>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={(e) => handleFile(e.target.files?.[0])}
-                className="hidden"
-              />
-            </div>
+                    } else {
+                      setRemoveAttachment(true);
+                    }
+                  }}
+                  className="shrink-0 text-xs font-medium text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragActive(false);
+                  handleFile(e.dataTransfer.files?.[0]);
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 text-center transition-colors ${
+                  dragActive
+                    ? "border-fuchsia-400 bg-fuchsia-50"
+                    : "border-gray-200 hover:border-fuchsia-300 hover:bg-gray-50"
+                }`}
+              >
+                <UploadCloud size={20} className="text-gray-400" />
+                <p className="text-xs font-medium text-gray-500">
+                  {removeAttachment ? "Attachment will be removed — drop a new file, or click to browse" : "Drop a file, or click to browse"}
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                  className="hidden"
+                />
+              </div>
+            )}
           </div>
 
           {localError && <p className="text-xs text-red-600">{localError}</p>}
@@ -516,7 +614,7 @@ function CreateNoticeModal({ onClose, onCreated, onError }) {
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-fuchsia-800 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-fuchsia-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Loader2 size={15} className="animate-spin" />}
-            {submitting ? "Posting…" : "Post Notice"}
+            {submitting ? (isEdit ? "Saving…" : "Posting…") : isEdit ? "Save Changes" : "Post Notice"}
           </button>
         </form>
       </div>
