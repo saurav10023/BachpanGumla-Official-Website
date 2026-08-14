@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaFacebookF, FaInstagram, FaYoutube, FaLock, FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import logo from "../files/logo.jpg";
@@ -11,7 +11,6 @@ const FUCHSIA_MID = "#a21caf";
 // theme, same logic as the "urgent" red on the notices page: a color this
 // recognizable communicates faster than matching the palette would.
 const WHATSAPP_GREEN = "#25D366";
-const WHATSAPP_GREEN_DARK = "#128C7E";
 
 const PHONE_DISPLAY = "+91-9608881888";
 const PHONE_TEL = "+919608881888";
@@ -37,16 +36,67 @@ const socials = [
 // different path.
 const ADMIN_LOGIN_PATH = "/admin/login";
 
+// Shared glass-panel look — frosted, blurred, hairline border, inset
+// highlight — used for the logo chip, ReachUsCard, and quick-link pills.
+const glassSurface = {
+  background: "rgba(255,255,255,0.1)",
+  border: "1px solid rgba(255,255,255,0.22)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18)",
+};
+
+function GlobalStyle() {
+  return (
+    <style>{`
+      @keyframes wa-pulse {
+        0%   { transform: scale(1);   opacity: 0.55; }
+        70%  { transform: scale(1.9); opacity: 0; }
+        100% { transform: scale(1.9); opacity: 0; }
+      }
+      @keyframes footer-drift1 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(30px, 20px) scale(1.08); }
+      }
+      @keyframes footer-drift2 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-25px, 20px) scale(1.05); }
+      }
+      .footer-blob1 { animation: footer-drift1 16s ease-in-out infinite; }
+      .footer-blob2 { animation: footer-drift2 14s ease-in-out infinite; }
+
+      .footer-shine { position: relative; overflow: hidden; isolation: isolate; }
+      .footer-shine::after {
+        content: "";
+        position: absolute;
+        top: 0; left: -60%;
+        width: 40%; height: 100%;
+        background: linear-gradient(115deg, transparent, rgba(255,255,255,0.5), transparent);
+        transform: skewX(-18deg);
+        transition: left 0.75s ease;
+        pointer-events: none;
+      }
+      .footer-shine:hover::after { left: 130%; }
+
+      @media (prefers-reduced-motion: reduce) {
+        [style*="wa-pulse"] { animation: none !important; }
+        .footer-blob1, .footer-blob2 { animation: none !important; }
+        .footer-shine::after { transition: none !important; }
+      }
+    `}</style>
+  );
+}
+
 function SocialIcon({ Icon, dest, hoverColor = "#ffffff" }) {
   return (
     <a href={dest} target="_blank" rel="noopener noreferrer">
       <div
+        className="footer-shine"
         style={{
           width: "40px",
           height: "40px",
           borderRadius: "50%",
-          background: "rgba(255,255,255,0.12)",
-          border: "1px solid rgba(255,255,255,0.25)",
+          ...glassSurface,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -61,9 +111,9 @@ function SocialIcon({ Icon, dest, hoverColor = "#ffffff" }) {
           e.currentTarget.style.transform = "translateY(-2px)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+          e.currentTarget.style.background = "rgba(255,255,255,0.1)";
           e.currentTarget.style.color = "#ffffff";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
           e.currentTarget.style.transform = "translateY(0)";
         }}
       >
@@ -100,16 +150,16 @@ function AdminLoginLink({ variant = "desktop" }) {
 }
 
 // Two equal-weight ways to reach the school directly — call or WhatsApp —
-// styled as a pair of pill buttons rather than a plain phone number, so the
-// card reads as "do something" instead of just "here's a number."
+// styled as a pair of pill buttons inside a frosted glass card.
 function ReachUsCard({ compact = false }) {
   return (
     <div
+      className="footer-shine"
       style={{
         padding: compact ? "16px" : "18px",
-        borderRadius: "14px",
-        background: "rgba(255,255,255,0.08)",
-        border: "1px solid rgba(255,255,255,0.14)",
+        borderRadius: "16px",
+        ...glassSurface,
+        boxShadow: "0 10px 26px -16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
       }}
     >
       <p
@@ -130,18 +180,21 @@ function ReachUsCard({ compact = false }) {
           href={WHATSAPP_LINK}
           target="_blank"
           rel="noopener noreferrer"
+          className="footer-shine"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "10px",
             padding: "10px 14px",
             borderRadius: "10px",
-            background: WHATSAPP_GREEN,
+            background: `linear-gradient(135deg, ${WHATSAPP_GREEN} 0%, #128C7E 100%)`,
+            border: "1px solid rgba(255,255,255,0.25)",
             color: "#ffffff",
             textDecoration: "none",
             fontFamily: "sans-serif",
             fontSize: "13px",
             fontWeight: 600,
+            boxShadow: "0 8px 20px -10px rgba(37,211,102,0.55), inset 0 1px 0 rgba(255,255,255,0.25)",
             transition: "filter 0.15s ease, transform 0.15s ease",
           }}
           onMouseEnter={(e) => {
@@ -159,14 +212,14 @@ function ReachUsCard({ compact = false }) {
 
         <a
           href={`tel:${PHONE_TEL}`}
+          className="footer-shine"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "10px",
             padding: "10px 14px",
             borderRadius: "10px",
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.16)",
+            ...glassSurface,
             color: "#ffffff",
             textDecoration: "none",
             fontFamily: "sans-serif",
@@ -174,8 +227,8 @@ function ReachUsCard({ compact = false }) {
             fontWeight: 600,
             transition: "background 0.15s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.16)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
         >
           <FaPhoneAlt size={13} />
           {PHONE_DISPLAY}
@@ -210,8 +263,11 @@ function WhatsAppFloatingButton() {
         width: "56px",
         height: "56px",
         borderRadius: "50%",
-        background: WHATSAPP_GREEN,
-        boxShadow: "0 8px 24px rgba(37,211,102,0.45)",
+        background: `linear-gradient(135deg, ${WHATSAPP_GREEN} 0%, #128C7E 100%)`,
+        border: "1px solid rgba(255,255,255,0.35)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        boxShadow: "0 8px 24px rgba(37,211,102,0.45), inset 0 1px 0 rgba(255,255,255,0.3)",
         color: "#ffffff",
         textDecoration: "none",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
@@ -238,13 +294,16 @@ function WhatsAppFloatingButton() {
           top: "50%",
           transform: `translateY(-50%) translateX(${showTooltip ? "0" : "6px"})`,
           whiteSpace: "nowrap",
-          background: FUCHSIA_DARK,
+          background: "rgba(74,4,78,0.9)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
           color: "#ffffff",
           fontFamily: "sans-serif",
           fontSize: "12.5px",
           fontWeight: 600,
           padding: "7px 12px",
           borderRadius: "8px",
+          border: "1px solid rgba(255,255,255,0.15)",
           opacity: showTooltip ? 1 : 0,
           pointerEvents: "none",
           transition: "opacity 0.18s ease, transform 0.18s ease",
@@ -273,26 +332,40 @@ export default function Footer() {
 
   return (
     <>
-      <style>{`
-        @keyframes wa-pulse {
-          0%   { transform: scale(1);   opacity: 0.55; }
-          70%  { transform: scale(1.9); opacity: 0; }
-          100% { transform: scale(1.9); opacity: 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="wa-pulse"] { animation: none !important; }
-        }
-      `}</style>
+      <GlobalStyle />
 
       {/* ── MOBILE FOOTER ── */}
       <footer
         className="lg:hidden"
-        style={{ background: gradientBg, color: "#fff" }}
+        style={{ position: "relative", overflow: "hidden", background: gradientBg, color: "#fff" }}
       >
-        <div style={{ padding: "36px 24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
+        {/* drifting gradient blobs */}
+        <div
+          className="footer-blob1"
+          style={{
+            position: "absolute", top: "-40px", right: "-30px",
+            width: 180, height: 180, borderRadius: "50%",
+            background: "rgba(245,158,11,0.18)", filter: "blur(50px)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          className="footer-blob2"
+          style={{
+            position: "absolute", bottom: "10%", left: "-20px",
+            width: 160, height: 160, borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)", filter: "blur(45px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", padding: "36px 24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
 
           {/* Logo */}
-          <div style={{ background: "#fff", borderRadius: "12px", padding: "6px 10px", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+          <div
+            className="footer-shine"
+            style={{ background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "6px 10px", boxShadow: "0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6)" }}
+          >
             <img src={logo} alt="School Logo" style={{ height: "48px", display: "block" }} />
           </div>
 
@@ -330,7 +403,7 @@ export default function Footer() {
             <ReachUsCard compact />
           </div>
 
-          {/* Quick links */}
+          {/* Quick links — glass pills */}
           <div style={{ textAlign: "center" }}>
             <p style={{ fontFamily: "sans-serif", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: "0 0 12px 0" }}>
               Quick Links
@@ -340,19 +413,19 @@ export default function Footer() {
                 <Link
                   key={l.label}
                   to={l.to}
+                  className="footer-shine"
                   style={{
                     fontFamily: "sans-serif",
                     fontSize: "12px",
-                    color: "rgba(255,255,255,0.8)",
+                    color: "rgba(255,255,255,0.85)",
                     textDecoration: "none",
                     padding: "5px 12px",
                     borderRadius: "999px",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    background: "rgba(255,255,255,0.08)",
+                    ...glassSurface,
                     transition: "all 0.2s ease",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.2)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.22)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
                 >
                   {l.label}
                 </Link>
@@ -389,11 +462,32 @@ export default function Footer() {
       {/* ── DESKTOP FOOTER ── */}
       <footer
         className="hidden lg:block"
-        style={{ background: gradientBg, color: "#fff" }}
+        style={{ position: "relative", overflow: "hidden", background: gradientBg, color: "#fff" }}
       >
+        {/* drifting gradient blobs */}
+        <div
+          className="footer-blob1"
+          style={{
+            position: "absolute", top: "-60px", right: "5%",
+            width: 260, height: 260, borderRadius: "50%",
+            background: "rgba(245,158,11,0.16)", filter: "blur(70px)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          className="footer-blob2"
+          style={{
+            position: "absolute", bottom: "-60px", left: "10%",
+            width: 220, height: 220, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)", filter: "blur(60px)",
+            pointerEvents: "none",
+          }}
+        />
+
         {/* Main content */}
         <div
           style={{
+            position: "relative",
             maxWidth: "1280px",
             margin: "0 auto",
             padding: "52px 32px 40px",
@@ -406,7 +500,10 @@ export default function Footer() {
           {/* Col 1 — Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px" }}>
-              <div style={{ background: "#fff", borderRadius: "12px", padding: "5px 8px", boxShadow: "0 4px 16px rgba(0,0,0,0.18)" }}>
+              <div
+                className="footer-shine"
+                style={{ background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "5px 8px", boxShadow: "0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.6)" }}
+              >
                 <img src={logo} alt="School Logo" style={{ height: "48px", display: "block" }} />
               </div>
               <div>
@@ -467,7 +564,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
+        <div style={{ position: "relative", borderTop: "1px solid rgba(255,255,255,0.12)" }}>
           <div
             style={{
               maxWidth: "1280px",

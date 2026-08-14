@@ -1,20 +1,18 @@
 import React, { useState } from "react";
 import { CalendarDays, Sun, Star, BookOpen, Bell } from "lucide-react";
 
+/**
+ * Liquid Glass theme — fuchsia + amber accent (#86198f / #a21caf / #f59e0b)
+ * per the Gallery-section brand tokens. Fonts kept as Georgia/sans-serif
+ * to match this page's existing typographic identity.
+ */
+
 const FUCHSIA = "#86198f";
 const FUCHSIA_DARK = "#4a044e";
 const FUCHSIA_MID = "#a21caf";
-const FUCHSIA_LIGHT = "#fdf4ff";
-const FUCHSIA_BORDER = "#f0abfc";
+const AMBER = "#f59e0b";
 
 // ── DATA ────────────────────────────────────────────────────────────────────
-const examBanners = [
-  { label: "1st Unit Test", note: "1st week of May" },
-  { label: "2nd Unit Test", note: "3rd week of July" },
-  { label: "1st Terminal Examination", note: "3rd week of September" },
-  { label: "3rd Unit Test", note: "Mid November" },
-];
-
 const holidays = [
   {
     date: "03-04-2026",
@@ -214,30 +212,112 @@ const holidays = [
   },
 ];
 
+// ── GLOBAL STYLE (glass system, blobs, shine) ───────────────────────────────
+function GlobalStyle() {
+  return (
+    <style>{`
+      @keyframes hol-drift1 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(40px, 30px) scale(1.08); }
+      }
+      @keyframes hol-drift2 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-30px, 25px) scale(1.05); }
+      }
+      @keyframes hol-drift3 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(20px, -35px) scale(1.1); }
+      }
+      .hol-blob1 { animation: hol-drift1 15s ease-in-out infinite; }
+      .hol-blob2 { animation: hol-drift2 13s ease-in-out infinite; }
+      .hol-blob3 { animation: hol-drift3 17s ease-in-out infinite; }
+
+      .hol-glass {
+        background: rgba(255,255,255,0.55);
+        border: 1px solid rgba(255,255,255,0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 10px 26px -14px rgba(134,25,143,0.28), inset 0 1px 0 rgba(255,255,255,0.85);
+      }
+
+      .hol-shine { position: relative; overflow: hidden; isolation: isolate; }
+      .hol-shine::after {
+        content: "";
+        position: absolute;
+        top: 0; left: -60%;
+        width: 40%; height: 100%;
+        background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent);
+        transform: skewX(-18deg);
+        transition: left 0.75s ease;
+        pointer-events: none;
+      }
+      .hol-shine:hover::after { left: 130%; }
+
+      .hol-row {
+        transition: background 0.2s ease;
+      }
+
+      .hol-fade-up {
+        animation: hol-fadeup 0.7s ease both;
+      }
+      @keyframes hol-fadeup {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hol-blob1, .hol-blob2, .hol-blob3 { animation: none !important; }
+        .hol-shine::after { transition: none !important; }
+        .hol-fade-up { animation: none !important; }
+      }
+    `}</style>
+  );
+}
+
 // ── BADGE ────────────────────────────────────────────────────────────────────
 function DaysBadge({ days, celebration }) {
   if (celebration) {
     return (
-      <span style={{
-        display: "inline-flex", alignItems: "center", gap: "4px",
-        background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa",
-        borderRadius: "999px", padding: "2px 10px", fontSize: "11px", fontWeight: 700,
-        fontFamily: "Georgia, serif", whiteSpace: "nowrap",
-      }}>
+      <span
+        className="hol-glass"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "4px",
+          color: "#b45309",
+          borderRadius: "999px",
+          padding: "3px 12px",
+          fontSize: "11px",
+          fontWeight: 700,
+          fontFamily: "Georgia, serif",
+          whiteSpace: "nowrap",
+          boxShadow:
+            "0 6px 16px -10px rgba(245,158,11,0.5), inset 0 1px 0 rgba(255,255,255,0.9)",
+        }}
+      >
         🎉 School Event
       </span>
     );
   }
   if (days === 0) return null;
   return (
-    <span style={{
-      display: "inline-block",
-      background: days >= 5 ? FUCHSIA_DARK : FUCHSIA_LIGHT,
-      color: days >= 5 ? "#fff" : FUCHSIA,
-      border: `1px solid ${days >= 5 ? FUCHSIA_DARK : FUCHSIA_BORDER}`,
-      borderRadius: "999px", padding: "2px 10px", fontSize: "11px", fontWeight: 700,
-      fontFamily: "Georgia, serif", whiteSpace: "nowrap",
-    }}>
+    <span
+      className="hol-glass"
+      style={{
+        display: "inline-block",
+        color: days >= 5 ? "#fff" : FUCHSIA,
+        background:
+          days >= 5
+            ? `linear-gradient(135deg, ${FUCHSIA_DARK}, ${FUCHSIA_MID})`
+            : "rgba(255,255,255,0.55)",
+        borderRadius: "999px",
+        padding: "3px 12px",
+        fontSize: "11px",
+        fontWeight: 700,
+        fontFamily: "Georgia, serif",
+        whiteSpace: "nowrap",
+      }}
+    >
       {days} {days === 1 ? "day" : "days"}
     </span>
   );
@@ -246,16 +326,23 @@ function DaysBadge({ days, celebration }) {
 // ── EXAM BANNER ───────────────────────────────────────────────────────────────
 function ExamBanner({ label, note }) {
   return (
-    <div style={{
-      background: `linear-gradient(90deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA_MID} 100%)`,
-      borderRadius: "10px",
-      padding: "10px 20px",
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      margin: "6px 0",
-    }}>
-      <BookOpen size={16} color="#f5d0fe" />
+    <div
+      className="hol-shine"
+      style={{
+        background: `linear-gradient(90deg, rgba(74,4,78,0.85) 0%, rgba(162,28,175,0.85) 100%)`,
+        border: "1px solid rgba(255,255,255,0.25)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        borderRadius: "12px",
+        padding: "10px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        margin: "6px 0",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)",
+      }}
+    >
+      <BookOpen size={16} color="#fde68a" />
       <span style={{ fontFamily: "Georgia, serif", fontSize: "14px", color: "#fff", fontWeight: "bold" }}>
         {label}
       </span>
@@ -284,41 +371,77 @@ export default function Holidays() {
     .reduce((acc, h) => acc + (h.days || 0), 0);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#faf5ff", fontFamily: "sans-serif" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#faf5ff", fontFamily: "sans-serif", overflow: "hidden" }}>
+      <GlobalStyle />
 
       {/* ── HERO ── */}
       <div style={{
-        background: `linear-gradient(135deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA_MID} 60%, #c026d3 100%)`,
-        padding: "48px 24px 56px",
         position: "relative",
+        padding: "48px 24px 64px",
         overflow: "hidden",
+        background: `linear-gradient(135deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA_MID} 60%, #c026d3 100%)`,
       }}>
-        {/* decorative circles */}
-        {[120, 200, 60].map((size, i) => (
-          <div key={i} style={{
-            position: "absolute",
-            width: size, height: size,
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.06)",
-            top: ["-30px", "10px", "60px"][i],
-            right: ["-40px", "15%", "30%"][i],
+        {/* drifting gradient blobs */}
+        <div
+          className="hol-blob1"
+          style={{
+            position: "absolute", top: "-60px", right: "-40px",
+            width: 260, height: 260, borderRadius: "50%",
+            background: "rgba(245,158,11,0.25)", filter: "blur(60px)",
             pointerEvents: "none",
-          }} />
-        ))}
+          }}
+        />
+        <div
+          className="hol-blob2"
+          style={{
+            position: "absolute", bottom: "-80px", left: "10%",
+            width: 220, height: 220, borderRadius: "50%",
+            background: "rgba(255,255,255,0.12)", filter: "blur(50px)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          className="hol-blob3"
+          style={{
+            position: "absolute", top: "20%", right: "25%",
+            width: 140, height: 140, borderRadius: "50%",
+            background: "rgba(240,171,252,0.2)", filter: "blur(40px)",
+            pointerEvents: "none",
+          }}
+        />
 
         <div style={{ maxWidth: "900px", margin: "0 auto", position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-            <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: "12px", padding: "10px" }}>
-              <CalendarDays size={28} color="#fff" />
+          {/* eyebrow pill */}
+          <span
+            className="hol-glass"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "8px",
+              padding: "7px 16px", borderRadius: "999px",
+              fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em",
+              textTransform: "uppercase", color: "#fdf4ff",
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              marginBottom: "16px",
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "999px", background: AMBER }} />
+            Session April 2026 – March 2027
+          </span>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+            <div
+              className="hol-glass hol-shine"
+              style={{
+                borderRadius: "14px", padding: "12px",
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              <CalendarDays size={26} color="#fff" />
             </div>
-            <div>
-              <p style={{ margin: 0, fontFamily: "sans-serif", fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>
-                Session April 2026 – March 2027
-              </p>
-              <h1 style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "clamp(22px, 5vw, 36px)", color: "#fff", fontWeight: "normal", lineHeight: 1.2 }}>
-                Holiday List
-              </h1>
-            </div>
+            <h1 style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "clamp(24px, 5vw, 38px)", color: "#fff", fontWeight: "normal", lineHeight: 1.2 }}>
+              Holiday List
+            </h1>
           </div>
 
           <p style={{ margin: "0 0 24px", fontFamily: "sans-serif", fontSize: "13px", color: "rgba(255,255,255,0.75)", maxWidth: "560px" }}>
@@ -326,24 +449,31 @@ export default function Holidays() {
             Primary Wing – Old D.A.V Campus, Bank Colony, Dunduria, Gumla
           </p>
 
-          {/* stats row */}
+          {/* stats row — glass chips */}
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             {[
               { icon: <Sun size={14} />, label: "Total Holiday Days", value: totalHolidayDays },
               { icon: <Star size={14} />, label: "Long Vacations", value: "3" },
               { icon: <Bell size={14} />, label: "School Celebrations", value: holidays.filter(h => h.celebration).length },
             ].map((s, i) => (
-              <div key={i} style={{
-                background: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: "10px",
-                padding: "10px 18px",
-                display: "flex", alignItems: "center", gap: "8px",
-              }}>
-                <span style={{ color: "#f0abfc" }}>{s.icon}</span>
+              <div
+                key={i}
+                className="hol-shine"
+                style={{
+                  background: "rgba(255,255,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  borderRadius: "12px",
+                  padding: "10px 18px",
+                  display: "flex", alignItems: "center", gap: "8px",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)",
+                }}
+              >
+                <span style={{ color: AMBER }}>{s.icon}</span>
                 <div>
                   <p style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", lineHeight: 1 }}>{s.value}</p>
-                  <p style={{ margin: 0, fontSize: "10px", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</p>
+                  <p style={{ margin: 0, fontSize: "10px", color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</p>
                 </div>
               </div>
             ))}
@@ -351,39 +481,71 @@ export default function Holidays() {
         </div>
       </div>
 
-      {/* ── FILTER PILLS ── */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #fae8ff", padding: "12px 24px", position: "sticky", top: 0, zIndex: 10 }}>
+      {/* ── FILTER PILLS (glass, sticky) ── */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.65)",
+          borderBottom: "1px solid rgba(240,171,252,0.5)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          padding: "12px 24px",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
         <div style={{ maxWidth: "900px", margin: "0 auto", display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {[
             { key: "all", label: "All" },
             { key: "vacation", label: "🌴 Long Vacations" },
             { key: "celebration", label: "🎉 School Events" },
             { key: "holiday", label: "📅 Public Holidays" },
-          ].map((f) => (
-            <button key={f.key} onClick={() => setFilter(f.key)} style={{
-              padding: "6px 14px",
-              borderRadius: "999px",
-              border: `1.5px solid ${filter === f.key ? FUCHSIA : FUCHSIA_BORDER}`,
-              background: filter === f.key ? FUCHSIA : "transparent",
-              color: filter === f.key ? "#fff" : FUCHSIA,
-              fontFamily: "sans-serif", fontSize: "12px", fontWeight: 600,
-              cursor: "pointer", transition: "all 0.18s ease",
-              letterSpacing: "0.04em",
-            }}>
-              {f.label}
-            </button>
-          ))}
+          ].map((f) => {
+            const active = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className="hol-shine"
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: "999px",
+                  border: `1px solid ${active ? "rgba(255,255,255,0.4)" : "rgba(240,171,252,0.8)"}`,
+                  background: active
+                    ? `linear-gradient(135deg, ${FUCHSIA_DARK}, ${FUCHSIA_MID})`
+                    : "rgba(255,255,255,0.55)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  color: active ? "#fff" : FUCHSIA,
+                  fontFamily: "sans-serif", fontSize: "12px", fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "transform 0.2s ease, background 0.2s ease, color 0.2s ease",
+                  letterSpacing: "0.04em",
+                  boxShadow: active
+                    ? "0 8px 20px -10px rgba(74,4,78,0.5), inset 0 1px 0 rgba(255,255,255,0.3)"
+                    : "inset 0 1px 0 rgba(255,255,255,0.8)",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* ── TABLE ── */}
-      <div style={{ maxWidth: "900px", margin: "28px auto", padding: "0 16px 60px" }}>
+      <div style={{ position: "relative", maxWidth: "900px", margin: "28px auto", padding: "0 16px 60px" }}>
 
         {/* Desktop Table */}
-        <div className="hidden sm:block" style={{ background: "#fff", borderRadius: "16px", border: "1px solid #fae8ff", overflow: "hidden", boxShadow: "0 4px 32px rgba(134,25,143,0.08)" }}>
+        <div
+          className="hol-glass hidden sm:block"
+          style={{ borderRadius: "18px", overflow: "hidden" }}
+        >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: `linear-gradient(90deg, ${FUCHSIA_DARK}, ${FUCHSIA_MID})` }}>
+              <tr style={{ background: `linear-gradient(90deg, rgba(74,4,78,0.9), rgba(162,28,175,0.9))` }}>
                 {["Date", "Day", "Festival / Occasion", "Notice", "Days"].map((h) => (
                   <th key={h} style={{
                     padding: "14px 16px", textAlign: "left",
@@ -405,18 +567,21 @@ export default function Holidays() {
                     </tr>
                   );
                 }
+                const bg = row.highlight
+                  ? "rgba(253,244,255,0.6)"
+                  : row.celebration
+                  ? "rgba(255,247,237,0.6)"
+                  : i % 2 === 0 ? "rgba(255,255,255,0.3)" : "rgba(253,250,255,0.3)";
                 return (
-                  <tr key={i} style={{
-                    background: row.highlight
-                      ? "#fdf4ff"
-                      : row.celebration
-                      ? "#fff7ed"
-                      : i % 2 === 0 ? "#fff" : "#fdfaff",
-                    borderBottom: "1px solid #fae8ff",
-                    transition: "background 0.15s",
-                  }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#faf0fe")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = row.highlight ? "#fdf4ff" : row.celebration ? "#fff7ed" : i % 2 === 0 ? "#fff" : "#fdfaff")}
+                  <tr
+                    key={i}
+                    className="hol-row"
+                    style={{
+                      background: bg,
+                      borderBottom: "1px solid rgba(240,171,252,0.35)",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(250,240,254,0.7)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = bg)}
                   >
                     <td style={{ padding: "13px 16px", fontFamily: "Georgia, serif", fontSize: "13px", color: FUCHSIA_DARK, fontWeight: 600, whiteSpace: "nowrap" }}>
                       {row.date}
@@ -427,7 +592,7 @@ export default function Holidays() {
                     <td style={{ padding: "13px 16px", fontFamily: "sans-serif", fontSize: "13px", color: "#1e1b4b", fontWeight: 500 }}>
                       {row.festival}
                     </td>
-                    <td style={{ padding: "13px 16px", fontFamily: "sans-serif", fontSize: "12px", color: "#92400e", fontStyle: row.notice ? "normal" : "normal" }}>
+                    <td style={{ padding: "13px 16px", fontFamily: "sans-serif", fontSize: "12px", color: "#92400e" }}>
                       {row.notice || <span style={{ color: "#d8b4fe" }}>—</span>}
                     </td>
                     <td style={{ padding: "13px 16px" }}>
@@ -446,14 +611,25 @@ export default function Holidays() {
             if (row.type === "banner") {
               return <ExamBanner key={i} label={row.label} note={row.note} />;
             }
+            const bg = row.highlight
+              ? "rgba(253,244,255,0.6)"
+              : row.celebration
+              ? "rgba(255,247,237,0.6)"
+              : "rgba(255,255,255,0.5)";
             return (
-              <div key={i} style={{
-                background: row.highlight ? "#fdf4ff" : row.celebration ? "#fff7ed" : "#fff",
-                border: `1px solid ${row.highlight ? FUCHSIA_BORDER : row.celebration ? "#fed7aa" : "#fae8ff"}`,
-                borderRadius: "12px",
-                padding: "14px 16px",
-                boxShadow: "0 2px 8px rgba(134,25,143,0.06)",
-              }}>
+              <div
+                key={i}
+                className="hol-shine"
+                style={{
+                  background: bg,
+                  border: "1px solid rgba(240,171,252,0.5)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  borderRadius: "14px",
+                  padding: "14px 16px",
+                  boxShadow: "0 6px 18px -12px rgba(134,25,143,0.3), inset 0 1px 0 rgba(255,255,255,0.7)",
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
                   <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "13px", color: FUCHSIA_DARK, fontWeight: 700 }}>{row.date}</p>
                   <DaysBadge days={row.days} celebration={row.celebration} />
@@ -461,7 +637,7 @@ export default function Holidays() {
                 <p style={{ margin: "0 0 4px", fontFamily: "sans-serif", fontSize: "14px", color: "#1e1b4b", fontWeight: 600 }}>{row.festival}</p>
                 <p style={{ margin: 0, fontFamily: "sans-serif", fontSize: "12px", color: "#6b21a8" }}>{row.day}</p>
                 {row.notice && (
-                  <p style={{ margin: "6px 0 0", fontFamily: "sans-serif", fontSize: "12px", color: "#92400e", background: "#fff7ed", borderRadius: "6px", padding: "5px 8px" }}>
+                  <p style={{ margin: "6px 0 0", fontFamily: "sans-serif", fontSize: "12px", color: "#92400e", background: "rgba(255,247,237,0.8)", borderRadius: "6px", padding: "5px 8px" }}>
                     📌 {row.notice}
                   </p>
                 )}
@@ -471,19 +647,21 @@ export default function Holidays() {
         </div>
 
         {/* Legend */}
-        <div style={{
-          marginTop: "28px", background: "#fff", border: "1px solid #fae8ff",
-          borderRadius: "12px", padding: "16px 20px",
-          display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "center",
-        }}>
+        <div
+          className="hol-glass"
+          style={{
+            marginTop: "28px", borderRadius: "14px", padding: "16px 20px",
+            display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "center",
+          }}
+        >
           <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "13px", color: FUCHSIA_DARK, fontWeight: 600 }}>Legend:</p>
           {[
-            { color: "#fdf4ff", border: FUCHSIA_BORDER, label: "Long Vacation" },
-            { color: "#fff7ed", border: "#fed7aa", label: "School Celebration" },
-            { color: "#fff", border: "#fae8ff", label: "Public Holiday" },
+            { color: "rgba(253,244,255,0.9)", border: "#f0abfc", label: "Long Vacation" },
+            { color: "rgba(255,247,237,0.9)", border: "#fed7aa", label: "School Celebration" },
+            { color: "rgba(255,255,255,0.9)", border: "#fae8ff", label: "Public Holiday" },
           ].map((l) => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "16px", height: "16px", borderRadius: "4px", background: l.color, border: `1.5px solid ${l.border}` }} />
+              <div style={{ width: "16px", height: "16px", borderRadius: "5px", background: l.color, border: `1.5px solid ${l.border}` }} />
               <span style={{ fontFamily: "sans-serif", fontSize: "12px", color: "#6b21a8" }}>{l.label}</span>
             </div>
           ))}

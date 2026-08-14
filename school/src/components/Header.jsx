@@ -116,22 +116,24 @@ export default function Header() {
   const AMBER_DARK = "#b45309";
 
   const navLinkStyle = {
-  fontFamily: "sans-serif",
-  fontSize: "13.5px",
-  fontWeight: 500,
-  letterSpacing: "0.04em",
-  color: "#ffffff",
-  textDecoration: "none",
-  padding: "6px 2px",
-  transition: "border-color 0.2s ease",
-  whiteSpace: "nowrap",
-  background: "none",
-  border: "none",
-  borderBottom: "2px solid transparent",
-  cursor: "pointer",
-};
-  // Shared look for the two header CTAs (Pay Fees / Register Online).
-  // `variant` controls which of the two treatments is used.
+    fontFamily: "sans-serif",
+    fontSize: "13.5px",
+    fontWeight: 500,
+    letterSpacing: "0.04em",
+    color: "#ffffff",
+    textDecoration: "none",
+    padding: "6px 2px",
+    transition: "border-color 0.2s ease",
+    whiteSpace: "nowrap",
+    background: "none",
+    border: "none",
+    borderBottom: "2px solid transparent",
+    cursor: "pointer",
+  };
+
+  // Shared look for the two header CTAs (Pay Fees / Register Online) — both
+  // are frosted glass now: ghost is a light glass chip, primary is a tinted
+  // amber-gradient glass chip with a shine sweep on hover.
   const ctaStyle = (variant) => ({
     display: "inline-flex",
     alignItems: "center",
@@ -144,40 +146,43 @@ export default function Header() {
     padding: "9px 18px",
     borderRadius: "10px",
     whiteSpace: "nowrap",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
     transition: "transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease",
     ...(variant === "ghost"
       ? {
-          background: "rgba(255,255,255,0.1)",
-          border: "1.5px solid rgba(255,255,255,0.4)",
+          background: "rgba(255,255,255,0.12)",
+          border: "1px solid rgba(255,255,255,0.4)",
           color: "#ffffff",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25)",
         }
       : {
-          background: `linear-gradient(135deg, ${AMBER} 0%, ${AMBER_DARK} 100%)`,
-          border: "1.5px solid transparent",
+          background: `linear-gradient(135deg, rgba(245,158,11,0.9) 0%, rgba(180,83,9,0.9) 100%)`,
+          border: "1px solid rgba(255,255,255,0.35)",
           color: "#ffffff",
-          boxShadow: "0 4px 16px rgba(180,83,9,0.4)",
+          boxShadow: "0 8px 22px -8px rgba(180,83,9,0.55), inset 0 1px 0 rgba(255,255,255,0.3)",
         }),
   });
 
   const ctaHoverOn = (e, variant) => {
     if (variant === "ghost") {
-      e.currentTarget.style.background = "#ffffff";
+      e.currentTarget.style.background = "rgba(255,255,255,0.85)";
       e.currentTarget.style.color = FUCHSIA_DARK;
-      e.currentTarget.style.borderColor = "#ffffff";
+      e.currentTarget.style.borderColor = "rgba(255,255,255,0.9)";
     } else {
       e.currentTarget.style.transform = "translateY(-2px)";
-      e.currentTarget.style.boxShadow = "0 8px 22px rgba(180,83,9,0.55)";
+      e.currentTarget.style.boxShadow = "0 12px 28px -8px rgba(180,83,9,0.65), inset 0 1px 0 rgba(255,255,255,0.4)";
     }
   };
 
   const ctaHoverOff = (e, variant) => {
     if (variant === "ghost") {
-      e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+      e.currentTarget.style.background = "rgba(255,255,255,0.12)";
       e.currentTarget.style.color = "#ffffff";
       e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)";
     } else {
       e.currentTarget.style.transform = "translateY(0)";
-      e.currentTarget.style.boxShadow = "0 4px 16px rgba(180,83,9,0.4)";
+      e.currentTarget.style.boxShadow = "0 8px 22px -8px rgba(180,83,9,0.55), inset 0 1px 0 rgba(255,255,255,0.3)";
     }
   };
 
@@ -193,6 +198,16 @@ export default function Header() {
     transition: "background 0.15s ease",
     borderRadius: "8px",
     margin: "2px 4px",
+  };
+
+  // Frosted glass panel used for both mobile menu and desktop dropdowns —
+  // replaces the old flat white panel.
+  const glassPanelStyle = {
+    background: "rgba(255,255,255,0.75)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    border: "1px solid rgba(255,255,255,0.85)",
+    boxShadow: "0 14px 40px -12px rgba(74,4,78,0.28), inset 0 1px 0 rgba(255,255,255,0.9)",
   };
 
   const schoolInfoItems = [
@@ -214,8 +229,8 @@ export default function Header() {
 
   return (
     <>
-      {/* Ticker + nav badge animations. Kept in a single <style> tag since
-          this component has no external stylesheet. */}
+      {/* Ticker + nav badge + glass-shine animations. Kept in a single
+          <style> tag since this component has no external stylesheet. */}
       <style>{`
         @keyframes btlk-marquee {
           0%   { transform: translateX(0); }
@@ -235,9 +250,22 @@ export default function Header() {
         .btlk-pulse-dot {
           animation: btlk-pulse-dot 1.8s ease-in-out infinite;
         }
+        .btlk-shine { position: relative; overflow: hidden; isolation: isolate; }
+        .btlk-shine::after {
+          content: "";
+          position: absolute;
+          top: 0; left: -60%;
+          width: 40%; height: 100%;
+          background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent);
+          transform: skewX(-18deg);
+          transition: left 0.75s ease;
+          pointer-events: none;
+        }
+        .btlk-shine:hover::after { left: 130%; }
         @media (prefers-reduced-motion: reduce) {
           .btlk-marquee-track { animation: none; }
           .btlk-pulse-dot { animation: none; }
+          .btlk-shine::after { transition: none; }
         }
       `}</style>
 
@@ -248,8 +276,11 @@ export default function Header() {
           position: "sticky",
           top: 0,
           zIndex: 50,
-          background: `linear-gradient(135deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA} 100%)`,
+          background: `linear-gradient(135deg, rgba(74,4,78,0.82) 0%, rgba(134,25,143,0.82) 100%)`,
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           boxShadow: scrolled ? "0 4px 24px rgba(134,25,143,0.35)" : "none",
+          borderBottom: "1px solid rgba(255,255,255,0.15)",
           transition: "box-shadow 0.3s ease",
         }}
       >
@@ -263,11 +294,12 @@ export default function Header() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
+              className="btlk-shine"
               style={{
-                background: "#fff",
+                background: "rgba(255,255,255,0.9)",
                 borderRadius: "10px",
                 padding: "3px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6)",
               }}
             >
               <img src={logo} alt="Logo" style={{ height: "40px", display: "block" }} />
@@ -303,7 +335,9 @@ export default function Header() {
             onClick={() => setMenuOpen(!menuOpen)}
             style={{
               background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.25)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.3)",
               borderRadius: "8px",
               padding: "6px",
               color: "#fff",
@@ -319,9 +353,14 @@ export default function Header() {
         {menuOpen && (
           <div
             style={{
-              background: "#ffffff",
+              ...glassPanelStyle,
               padding: "8px 16px 20px",
-              borderTop: "1px solid #f5d0fe",
+              borderTop: "1px solid rgba(245,208,254,0.6)",
+              borderLeft: "none",
+              borderRight: "none",
+              borderBottom: "none",
+              borderRadius: 0,
+              boxShadow: "0 18px 40px -18px rgba(74,4,78,0.3) inset",
             }}
           >
             {[
@@ -343,7 +382,7 @@ export default function Header() {
                   fontWeight: 600,
                   color: FUCHSIA_DARK,
                   textDecoration: "none",
-                  borderBottom: "1px solid #fae8ff",
+                  borderBottom: "1px solid rgba(250,232,255,0.8)",
                 }}
               >
                 <span style={{ color: FUCHSIA, position: "relative" }}>
@@ -373,6 +412,7 @@ export default function Header() {
               <Link
                 to="https://btlk.scientificstudy.in/payment?key=btlk"
                 onClick={closeAll}
+                className="btlk-shine"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -380,13 +420,16 @@ export default function Header() {
                   gap: "6px",
                   padding: "12px 8px",
                   borderRadius: "12px",
-                  border: `1.5px solid ${FUCHSIA_BORDER}`,
-                  background: FUCHSIA_LIGHT,
+                  border: `1px solid ${FUCHSIA_BORDER}`,
+                  background: "rgba(253,244,255,0.7)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
                   color: FUCHSIA_DARK,
                   fontFamily: "sans-serif",
                   fontSize: "13px",
                   fontWeight: 700,
                   textDecoration: "none",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
                 }}
               >
                 <CreditCardIcon size={16} />
@@ -395,6 +438,7 @@ export default function Header() {
               <Link
                 to="https://btlk.scientificstudy.in/admissionregistration?key=btlk"
                 onClick={closeAll}
+                className="btlk-shine"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -402,14 +446,16 @@ export default function Header() {
                   gap: "6px",
                   padding: "12px 8px",
                   borderRadius: "12px",
-                  border: "1.5px solid transparent",
-                  background: `linear-gradient(135deg, ${AMBER} 0%, ${AMBER_DARK} 100%)`,
+                  border: "1px solid rgba(255,255,255,0.4)",
+                  background: `linear-gradient(135deg, rgba(245,158,11,0.92) 0%, rgba(180,83,9,0.92) 100%)`,
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
                   color: "#ffffff",
                   fontFamily: "sans-serif",
                   fontSize: "13px",
                   fontWeight: 700,
                   textDecoration: "none",
-                  boxShadow: "0 4px 14px rgba(180,83,9,0.35)",
+                  boxShadow: "0 6px 18px -6px rgba(180,83,9,0.45), inset 0 1px 0 rgba(255,255,255,0.35)",
                 }}
               >
                 <Rocket size={16} />
@@ -432,7 +478,7 @@ export default function Header() {
                 color: FUCHSIA_DARK,
                 background: "none",
                 border: "none",
-                borderBottom: "1px solid #fae8ff",
+                borderBottom: "1px solid rgba(250,232,255,0.8)",
                 cursor: "pointer",
               }}
             >
@@ -450,7 +496,7 @@ export default function Header() {
                   { to: "/courses/primary", icon: <School size={15} />, label: "Primary School" },
                 ].map((item) => (
                   <Link key={item.label} to={item.to} onClick={closeAll}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: FUCHSIA_LIGHT, fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textDecoration: "none" }}>
+                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: "rgba(253,244,255,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textDecoration: "none" }}>
                     {item.icon} {item.label}
                   </Link>
                 ))}
@@ -472,7 +518,7 @@ export default function Header() {
                 color: FUCHSIA_DARK,
                 background: "none",
                 border: "none",
-                borderBottom: "1px solid #fae8ff",
+                borderBottom: "1px solid rgba(250,232,255,0.8)",
                 cursor: "pointer",
               }}
             >
@@ -490,7 +536,7 @@ export default function Header() {
                   { to: "https://btlk.scientificstudy.in/online/registration?key=btlk&tab=registration", icon: <UserCheck size={15} />, label: "Register Online" },
                 ].map((item) => (
                   <Link key={item.label} to={item.to} onClick={closeAll}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: FUCHSIA_LIGHT, fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textDecoration: "none" }}>
+                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: "rgba(253,244,255,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textDecoration: "none" }}>
                     {item.icon} {item.label}
                   </Link>
                 ))}
@@ -512,7 +558,7 @@ export default function Header() {
                 color: FUCHSIA_DARK,
                 background: "none",
                 border: "none",
-                borderBottom: "1px solid #fae8ff",
+                borderBottom: "1px solid rgba(250,232,255,0.8)",
                 cursor: "pointer",
               }}
             >
@@ -526,7 +572,7 @@ export default function Header() {
               <div style={{ marginLeft: "16px", borderLeft: `2px solid ${FUCHSIA_BORDER}`, paddingLeft: "12px", paddingTop: "6px", paddingBottom: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
                 {schoolInfoItems.map((item) => (
                   <Link key={item.label} to={item.to} onClick={closeAll}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: FUCHSIA_LIGHT, fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textDecoration: "none" }}>
+                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: "rgba(253,244,255,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", fontFamily: "sans-serif", fontSize: "13px", color: FUCHSIA, textDecoration: "none" }}>
                     {item.icon} {item.label}
                   </Link>
                 ))}
@@ -538,7 +584,7 @@ export default function Header() {
               { to: "https://jobs.scientificstudy.in/career?schoolcode=btlk", icon: <UserPlusIcon size={18} />, label: "Career" },
             ].map((item) => (
               <Link key={item.label} to={item.to} onClick={closeAll}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 4px", fontFamily: "sans-serif", fontSize: "14px", fontWeight: 600, color: FUCHSIA_DARK, textDecoration: "none", borderBottom: "1px solid #fae8ff" }}>
+                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 4px", fontFamily: "sans-serif", fontSize: "14px", fontWeight: 600, color: FUCHSIA_DARK, textDecoration: "none", borderBottom: "1px solid rgba(250,232,255,0.8)" }}>
                 <span style={{ color: FUCHSIA }}>{item.icon}</span>
                 {item.label}
               </Link>
@@ -561,8 +607,16 @@ export default function Header() {
           transition: "box-shadow 0.3s ease",
         }}
       >
-        {/* Top info bar */}
-        <div style={{ background: "#fdf4ff", borderBottom: "1px solid #f5d0fe", padding: "5px 0" }}>
+        {/* Top info bar — glass strip */}
+        <div
+          style={{
+            background: "rgba(253,244,255,0.75)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            borderBottom: "1px solid rgba(245,208,254,0.7)",
+            padding: "5px 0",
+          }}
+        >
           <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <p style={{ fontFamily: "sans-serif", fontSize: "12px", color: "#86198f", margin: 0 }}>
               &#9993;&nbsp;
@@ -579,13 +633,29 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Main nav */}
-        <div style={{ background: `linear-gradient(135deg, ${FUCHSIA_DARK} 0%, ${FUCHSIA_MID} 60%, ${FUCHSIA} 100%)`, padding: "0 24px" }}>
+        {/* Main nav — translucent frosted gradient over whatever scrolls beneath it */}
+        <div
+          style={{
+            background: `linear-gradient(135deg, rgba(74,4,78,0.85) 0%, rgba(162,28,175,0.85) 60%, rgba(134,25,143,0.85) 100%)`,
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            borderBottom: "1px solid rgba(255,255,255,0.12)",
+            padding: "0 24px",
+          }}
+        >
           <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", height: "72px" }}>
 
             {/* Logo */}
             <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-              <div style={{ background: "#ffffff", borderRadius: "12px", padding: "4px", boxShadow: "0 2px 16px rgba(0,0,0,0.18)" }}>
+              <div
+                className="btlk-shine"
+                style={{
+                  background: "rgba(255,255,255,0.92)",
+                  borderRadius: "12px",
+                  padding: "4px",
+                  boxShadow: "0 2px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.6)",
+                }}
+              >
                 <img src={logo} alt="Logo" style={{ height: "56px", display: "block" }} />
               </div>
               <div>
@@ -633,7 +703,7 @@ export default function Header() {
                     <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: display1 ? "rotate(180deg)" : "rotate(0deg)" }} />
                   </button>
                   {display1 && (
-                    <ul style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", background: "#ffffff", borderRadius: "12px", boxShadow: "0 8px 40px rgba(134,25,143,0.18)", minWidth: "200px", padding: "6px 0", listStyle: "none", margin: 0, border: "1px solid #f5d0fe" }}>
+                    <ul style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", minWidth: "200px", padding: "6px 0", listStyle: "none", margin: 0, ...glassPanelStyle }}>
                       {[
                         { to: "/courses/playgroup", icon: <Baby size={15} />, label: "Play Group" },
                         { to: "/courses/nursery", icon: <BookOpen size={15} />, label: "Kindergarten" },
@@ -644,7 +714,7 @@ export default function Header() {
                             to={item.to}
                             onClick={togglecourse}
                             style={dropdownItemStyle}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = FUCHSIA_LIGHT)}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(253,244,255,0.9)")}
                             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                           >
                             <span style={{ color: FUCHSIA }}>{item.icon}</span>
@@ -672,7 +742,7 @@ export default function Header() {
                     <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: display2 ? "rotate(180deg)" : "rotate(0deg)" }} />
                   </button>
                   {display2 && (
-                    <ul style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", background: "#ffffff", borderRadius: "12px", boxShadow: "0 8px 40px rgba(134,25,143,0.18)", minWidth: "210px", padding: "6px 0", listStyle: "none", margin: 0, border: "1px solid #f5d0fe" }}>
+                    <ul style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", minWidth: "210px", padding: "6px 0", listStyle: "none", margin: 0, ...glassPanelStyle }}>
                       {[
                         { to: "/admission/process", icon: <ClipboardList size={15} />, label: "Admission Process" },
                         { to: "https://btlk.scientificstudy.in/online/admissionenquiry?key=btlk&tab=admissionenquiry", icon: <FileQuestion size={15} />, label: "Admission Enquiry" },
@@ -683,7 +753,7 @@ export default function Header() {
                             to={item.to}
                             onClick={toggleadd}
                             style={dropdownItemStyle}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = FUCHSIA_LIGHT)}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(253,244,255,0.9)")}
                             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                           >
                             <span style={{ color: FUCHSIA }}>{item.icon}</span>
@@ -711,14 +781,14 @@ export default function Header() {
                     <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: display3 ? "rotate(180deg)" : "rotate(0deg)" }} />
                   </button>
                   {display3 && (
-                    <ul style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", background: "#ffffff", borderRadius: "12px", boxShadow: "0 8px 40px rgba(134,25,143,0.18)", minWidth: "220px", padding: "6px 0", listStyle: "none", margin: 0, border: "1px solid #f5d0fe" }}>
+                    <ul style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", minWidth: "220px", padding: "6px 0", listStyle: "none", margin: 0, ...glassPanelStyle }}>
                       {schoolInfoItems.map((item) => (
                         <li key={item.label}>
                           <Link
                             to={item.to}
                             onClick={toggleschoolinfo}
                             style={dropdownItemStyle}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = FUCHSIA_LIGHT)}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(253,244,255,0.9)")}
                             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                           >
                             <span style={{ color: FUCHSIA }}>{item.icon}</span>
@@ -772,11 +842,12 @@ export default function Header() {
               </ul>
             </nav>
 
-            {/* CTA cluster — Pay Fees is the quiet option, Register Online
-                is the one visual "loud" moment in the nav. */}
+            {/* CTA cluster — Pay Fees is the quiet glass chip, Register Online
+                is the tinted amber-gradient glass chip with shine sweep. */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Link
                 to="https://btlk.scientificstudy.in/payment?key=btlk"
+                className="btlk-shine"
                 style={ctaStyle("ghost")}
                 onMouseEnter={(e) => ctaHoverOn(e, "ghost")}
                 onMouseLeave={(e) => ctaHoverOff(e, "ghost")}
@@ -786,6 +857,7 @@ export default function Header() {
               </Link>
               <Link
                 to="https://btlk.scientificstudy.in/admissionregistration?key=btlk"
+                className="btlk-shine"
                 style={ctaStyle("primary")}
                 onMouseEnter={(e) => ctaHoverOn(e, "primary")}
                 onMouseLeave={(e) => ctaHoverOff(e, "primary")}
@@ -808,24 +880,30 @@ export default function Header() {
         style={{
           display: "flex",
           alignItems: "stretch",
-          background: FUCHSIA_DARK,
-          borderBottom: `1px solid ${FUCHSIA_MID}`,
+          background: "rgba(74,4,78,0.9)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderBottom: `1px solid rgba(162,28,175,0.6)`,
         }}
       >
         <div
+          className="btlk-shine"
           style={{
             flexShrink: 0,
             display: "flex",
             alignItems: "center",
             gap: "6px",
             padding: "8px 12px",
-            background: `linear-gradient(135deg, ${AMBER} 0%, ${AMBER_DARK} 100%)`,
+            background: `linear-gradient(135deg, rgba(245,158,11,0.92) 0%, rgba(180,83,9,0.92) 100%)`,
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
             color: "#fff",
             fontFamily: "sans-serif",
             fontSize: "11px",
             fontWeight: 700,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)",
             zIndex: 1,
           }}
         >
@@ -873,7 +951,7 @@ export default function Header() {
               left: 0,
               bottom: 0,
               width: "28px",
-              background: `linear-gradient(90deg, ${FUCHSIA_DARK} 0%, transparent 100%)`,
+              background: `linear-gradient(90deg, rgba(74,4,78,0.9) 0%, transparent 100%)`,
               pointerEvents: "none",
             }}
           />
@@ -885,7 +963,7 @@ export default function Header() {
               right: 0,
               bottom: 0,
               width: "28px",
-              background: `linear-gradient(270deg, ${FUCHSIA_DARK} 0%, transparent 100%)`,
+              background: `linear-gradient(270deg, rgba(74,4,78,0.9) 0%, transparent 100%)`,
               pointerEvents: "none",
             }}
           />
