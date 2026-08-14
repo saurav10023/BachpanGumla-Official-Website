@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -40,4 +40,19 @@
 
 .read-the-docs {
   color: #888;
+} */
+
+
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
 }
