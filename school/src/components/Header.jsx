@@ -116,22 +116,20 @@ export default function Header() {
   const AMBER_DARK = "#b45309";
 
   const navLinkStyle = {
-    fontFamily: "sans-serif",
-    fontSize: "13.5px",
-    fontWeight: 500,
-    letterSpacing: "0.04em",
-    color: "#ffffff",
-    textDecoration: "none",
-    padding: "6px 2px",
-    borderBottom: "2px solid transparent",
-    transition: "border-color 0.2s ease",
-    whiteSpace: "nowrap",
-    background: "none",
-    border: "none",
-    borderBottom: "2px solid transparent",
-    cursor: "pointer",
-  };
-
+  fontFamily: "sans-serif",
+  fontSize: "13.5px",
+  fontWeight: 500,
+  letterSpacing: "0.04em",
+  color: "#ffffff",
+  textDecoration: "none",
+  padding: "6px 2px",
+  transition: "border-color 0.2s ease",
+  whiteSpace: "nowrap",
+  background: "none",
+  border: "none",
+  borderBottom: "2px solid transparent",
+  cursor: "pointer",
+};
   // Shared look for the two header CTAs (Pay Fees / Register Online).
   // `variant` controls which of the two treatments is used.
   const ctaStyle = (variant) => ({
