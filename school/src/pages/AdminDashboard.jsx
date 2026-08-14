@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import AlbumsPanel from "../components/admin/Albumspanel";
-import NoticesPanel from "../components/admin/NoticesPanel";
+import NoticesPanel from "../components/admin/Noticespanel";
 
 const TABS = [
   { key: "albums", label: "Gallery" },
