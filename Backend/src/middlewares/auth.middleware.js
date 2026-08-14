@@ -1,19 +1,26 @@
-import User from "../models/user.model.js";
-import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import jwt from "jsonwebtoken";
-/* -------------------------------------------------------------------------- */
-/* VERIFY JWT                                                                 */
-/* Requires a valid access token (cookie or Bearer header).                   */
-/* No token, invalid token, or expired token → 401.                           */
-/* -------------------------------------------------------------------------- */
-
 export const verifyjwt = asyncHandler(async (req, res, next) => {
-    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+    console.log("AUTH DEBUG");
+    console.log("Cookies:", req.cookies);
+    console.log("Access Token Cookie:", req.cookies?.accessToken);
+    console.log("Authorization:", req.header("Authorization"));
+
+    const token =
+        req.cookies?.accessToken ||
+        req.header("Authorization")?.replace("Bearer ", "");
+
+    if (!token) {
+        console.log("❌ NO ACCESS TOKEN RECEIVED");
+        throw new ApiError(401, "Access token not received");
+    }
 
     try {
-        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        const user = await User.findById(decodedToken?._id).select("-refreshToken");
+        const decodedToken = jwt.verify(
+            token,
+            process.env.ACCESS_TOKEN_SECRET
+        );
+
+        const user = await User.findById(decodedToken?._id)
+            .select("-refreshToken");
 
         if (!user) {
             throw new ApiError(401, "Invalid Access Token");
@@ -22,6 +29,10 @@ export const verifyjwt = asyncHandler(async (req, res, next) => {
         req.user = user;
         next();
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Access Token");
+        console.log("❌ JWT ERROR:", error.message);
+        throw new ApiError(
+            401,
+            error?.message || "Invalid Access Token"
+        );
     }
 });
