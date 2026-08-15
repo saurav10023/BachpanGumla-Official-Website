@@ -3,6 +3,10 @@ import heroImage from "./files/hero-boy2.png";
 import brain from "./files/brain-logo.avif";
 import growth from "./files/growth-icon-flat.avif";
 import { Link } from "react-router-dom";
+import books from "./files/books.png"
+import bulb from "./files/bulb.png"
+import color from "./files/color.png"
+import testtube from "./files/testtube.png"
 
 /* -------------------------------------------------------------------------
    Design notes:
@@ -141,28 +145,28 @@ function FloatingChips({ scale }) {
         className={`${large ? "top-6 right-2 h-14 w-14 text-2xl" : "top-2 -right-2 h-11 w-11 text-lg"}`}
         delay="0s"
       >
-        🎒
+        <img src={books} alt="growth" className="w-full h-full object-contain" />
       </GlassChip>
 
       <GlassChip
         className={`${large ? "bottom-16 -left-4 h-16 w-16 text-3xl" : "bottom-10 -left-2 h-12 w-12 text-xl"}`}
         delay="0.6s"
       >
-        📘
+        <img src={color} alt="growth" className="w-full h-full object-contain" />
       </GlassChip>
 
       <GlassChip
         className={`${large ? "-bottom-2 right-4 h-20 w-20 p-4" : "-bottom-1 right-2 h-14 w-14 p-2.5"}`}
         delay="1.1s"
       >
-        <img src={growth} alt="growth" className="w-full h-full object-contain" />
+        <img src={testtube} alt="growth" className="w-full h-full object-contain" />
       </GlassChip>
 
       <GlassChip
         className={`${large ? "top-10 left-2 h-14 w-14 p-3" : "top-0 left-0 h-11 w-11 p-2"}`}
         delay="1.6s"
       >
-        <img src={brain} alt="brain" className="w-full h-full object-contain" />
+        <img src={bulb} alt="brain" className="w-full h-full object-contain" />
       </GlassChip>
     </>
   );
