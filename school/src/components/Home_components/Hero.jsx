@@ -38,6 +38,7 @@ const STATS = [
 
 export default function Hero() {
   return (
+    
     <section className="hero-font relative overflow-hidden bg-gradient-to-b from-[#F3F0FF] via-[#FAF7FF] to-white md:h-screen md:max-h-[860px] md:min-h-[620px]">
       <GlobalStyles />
       <MeshBackground />

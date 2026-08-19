@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import AlbumsPanel from "../components/admin/Albumspanel";
 import NoticesPanel from "../components/admin/Noticespanel";
+import StudentsPanel from "../components/admin/StudentsPanel";
 
 const TABS = [
   { key: "albums", label: "Gallery" },
   { key: "notices", label: "Notices" },
+  { key: "students", label: "Students" },
 ];
 
 export default function AdminDashboard() {
@@ -168,6 +170,7 @@ export default function AdminDashboard() {
         >
           {activeTab === "albums" && <AlbumsPanel />}
           {activeTab === "notices" && <NoticesPanel />}
+          {activeTab === "students" && <StudentsPanel />}
         </div>
       </main>
     </div>

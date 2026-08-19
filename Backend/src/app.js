@@ -35,6 +35,9 @@ app.use("/api/gallery", galleryRouter);
 import noticeRouter from "./routes/notice.routes.js"
 app.use("/api/notices" , noticeRouter);
 
+import studentRouter from "./routes/student.routes.js"
+app.use("/api/v1/students" , studentRouter);
+
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
