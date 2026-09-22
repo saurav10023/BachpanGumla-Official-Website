@@ -293,6 +293,7 @@ export default function Header() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <Link to="/">
             <div
               className="btlk-shine"
               style={{
@@ -304,6 +305,7 @@ export default function Header() {
             >
               <img src={logo} alt="Logo" style={{ height: "40px", display: "block" }} />
             </div>
+            </Link>
             <div>
               <p
                 style={{
@@ -647,6 +649,7 @@ export default function Header() {
 
             {/* Logo */}
             <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <Link to="/">
               <div
                 className="btlk-shine"
                 style={{
@@ -658,6 +661,7 @@ export default function Header() {
               >
                 <img src={logo} alt="Logo" style={{ height: "56px", display: "block" }} />
               </div>
+              </Link>
               <div>
                 <p style={{ fontFamily: "Georgia, serif", fontSize: "18px", fontWeight: "normal", color: "#ffffff", margin: 0, lineHeight: 1.2 }}>
                   Bachpan

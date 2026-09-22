@@ -21,7 +21,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 const cookieOptions = {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "lax",
 };
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

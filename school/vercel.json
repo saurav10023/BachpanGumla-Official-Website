@@ -7,9 +7,7 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/:path*", "destination": "https://YOUR-BACKEND-DOMAIN/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

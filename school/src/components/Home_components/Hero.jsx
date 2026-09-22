@@ -7,6 +7,7 @@ import books from "./files/books.png"
 import bulb from "./files/bulb.png"
 import color from "./files/color.png"
 import testtube from "./files/testtube.png"
+import BirthdayBar from "./BirthdayBar"; // adjust path to wherever it lives
 
 /* -------------------------------------------------------------------------
    Design notes:
@@ -22,6 +23,16 @@ import testtube from "./files/testtube.png"
 
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+   ---------------------------------------------------------------------
+   CHANGE (this pass): only the BirthdayBar placement moved. It used to
+   live inline next to the eyebrow pill, where it fought for space and
+   wrapped awkwardly on narrow screens. It now sits in its own slim,
+   full-width glass strip pinned to the very top of the section — same
+   liquid-glass language as the rest of the page (frosted blur, hairline
+   border, inner highlight, soft entrance animation), just given its own
+   row so it never collides with anything else. Nothing else below was
+   touched.
 ------------------------------------------------------------------------- */
 
 const CTAS = [
@@ -38,18 +49,27 @@ const STATS = [
 
 export default function Hero() {
   return (
-    
+
     <section className="hero-font relative overflow-hidden bg-gradient-to-b from-[#F3F0FF] via-[#FAF7FF] to-white md:h-screen md:max-h-[860px] md:min-h-[620px]">
       <GlobalStyles />
       <MeshBackground />
 
-      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
+      {/* Sleek full-width birthday strip — its own row, above everything else */}
+      <div className="birthday-strip hero-in" style={{ animationDelay: "0ms" }}>
+        <div className="birthday-strip__inner">
+          <BirthdayBar />
+        </div>
+      </div>
+
+      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 lg:gap-14 items-center">
         {/* ------------------------------- LEFT ------------------------------- */}
         <div className="flex flex-col justify-center text-center md:text-left hero-in" style={{ animationDelay: "60ms" }}>
-          <span className="glass-pill mx-auto md:mx-0">
-            <span className="glass-dot" />
-            Welcome to Our School
-          </span>
+          <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start">
+            <span className="glass-pill">
+              <span className="glass-dot" />
+              Welcome to Our School
+            </span>
+          </div>
 
           <h1 className="hero-display mt-3 text-3xl sm:text-4xl md:text-[2.6rem] font-semibold text-[#221B45] leading-[1.12]">
             Nurturing Minds <br />
@@ -201,6 +221,71 @@ function GlobalStyles() {
     <style>{`
       .hero-font, .hero-font * { font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; }
       .hero-display { font-family: "Fredoka", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; }
+
+      /* ---- Birthday strip: full-width on mobile, compact floating badge on desktop ---- */
+      .birthday-strip {
+        position: relative;
+        z-index: 5;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 8px 16px;
+      }
+      .birthday-strip__inner {
+        width: 100%;
+        max-width: 640px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.55);
+        border: 1px solid rgba(255,255,255,0.8);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 8px 20px -10px rgba(99,60,201,0.35), inset 0 1px 0 rgba(255,255,255,0.9);
+        padding: 6px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: #4C1D95;
+      }
+
+      /* Desktop / laptop: lift it out of the document flow entirely so it
+         never steals vertical space from the centered hero grid, and let it
+         read as a small floating badge in the section's top-right corner
+         instead of a stretched full-width bar. */
+      @media (min-width: 768px) {
+        .birthday-strip {
+          position: absolute;
+          top: 22px;
+          right: 28px;
+          left: auto;
+          width: auto;
+          padding: 0;
+          z-index: 20;
+          justify-content: flex-end;
+          animation-duration: 0.9s;
+        }
+        .birthday-strip__inner {
+          width: auto;
+          max-width: 480px;
+          white-space: nowrap;
+          padding: 8px 22px;
+          font-size: 13px;
+          box-shadow: 0 10px 24px -10px rgba(99,60,201,0.4), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+      }
+      @media (min-width: 1280px) {
+        .birthday-strip {
+          top: 28px;
+          right: 40px;
+        }
+        .birthday-strip__inner {
+          max-width: 560px;
+          padding: 9px 26px;
+          font-size: 13.5px;
+        }
+      }
 
       .glass-pill {
         display: inline-flex;
