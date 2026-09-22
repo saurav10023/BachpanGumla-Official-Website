@@ -1,13 +1,9 @@
 {
   "redirects": [
-    {
-      "source": "/home",
-      "destination": "/",
-      "permanent": false
-    }
+    { "source": "/home", "destination": "/", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://YOUR-BACKEND-DOMAIN/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://bachpangumla-official-website.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
